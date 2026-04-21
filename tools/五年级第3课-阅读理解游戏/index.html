@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>🔒 沉默教室·心锁逃脱 · 《可贵的沉默》</title>
+<style>
+:root{
+  --ink:#2a2a3e; --panel:#ffffff;
+  --main:#c4623a; --main-dark:#8f3c19; --accent:#f4b63e;
+  --ok:#3dd28a; --no:#ef5b5b; --soft:#fff3e4; --line:#ebc9a2;
+  --heart:#e55589; --hl:#ffe993;
+  --lock:#6b4b2e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:
+  radial-gradient(circle at 10% 0%, #4a3a2e 0%, transparent 45%),
+  radial-gradient(circle at 95% 100%, #2a1a1e 0%, transparent 55%),
+  linear-gradient(160deg,#3a2a24,#231a18);color:var(--ink);min-height:100vh}
+body{padding:16px 12px 40px}
+
+/* ============ HUD ============ */
+.hud{max-width:1020px;margin:0 auto 14px;background:rgba(255,248,235,.97);border-radius:16px;padding:12px 16px;display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:10px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.4);border:2px solid #8f3c19}
+@media (max-width:780px){.hud{grid-template-columns:auto 1fr;row-gap:6px}}
+.mascot{font-size:30px;animation:breathe 2.4s ease-in-out infinite;filter:drop-shadow(0 2px 4px rgba(0,0,0,.2))}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.title{font-weight:800;color:var(--main-dark);font-size:17px;line-height:1.2}
+.title small{display:block;font-weight:500;color:#7a5540;font-size:12px;margin-top:2px}
+.hudbox{display:flex;align-items:center;gap:6px;background:var(--soft);border-radius:999px;padding:6px 12px;font-weight:700;font-size:14px;white-space:nowrap;border:1.5px solid var(--line)}
+.hudbox.flower{background:#ffe3f0;color:#a8336a;border-color:#f2b5cc}
+.hudbox.key{background:#fff5d9;color:#a37200;border-color:#f4d78a}
+.hudbox.read{background:#e3f2e6;color:#1e6b3d;border-color:#a8d8b2}
+.lifebar{position:relative;width:130px;height:14px;background:#e0d6c6;border-radius:999px;overflow:hidden;border:1.5px solid var(--line)}
+.lifefill{position:absolute;inset:0;width:100%;background:linear-gradient(90deg,#ff9bb5,var(--heart));transition:width .4s}
+.lifefill.low{background:linear-gradient(90deg,#7a7ab5,#3a3a6e)}
+.lifelbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4)}
+
+/* ============ PROGRESS ============ */
+.progress{max-width:1020px;margin:0 auto 14px;display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.node{background:rgba(255,248,235,.2);color:#fff8eb;border-radius:10px;padding:8px 4px;text-align:center;font-weight:700;font-size:13px;border:2px solid transparent;cursor:pointer;transition:all .2s}
+.node.current{background:var(--accent);color:#3b2a00;border-color:#fff8eb;transform:translateY(-2px);box-shadow:0 4px 12px rgba(244,182,62,.5)}
+.node.done{background:var(--ok);color:#fff}
+.node.locked{opacity:.4;cursor:not-allowed}
+.node .lbl{display:block;font-size:11px;margin-top:2px;opacity:.85}
+
+/* ============ MAIN LAYOUT ============ */
+.main{max-width:1020px;margin:0 auto;display:grid;grid-template-columns:1.05fr 1fr;gap:14px}
+@media (max-width:820px){.main{grid-template-columns:1fr}}
+.card{background:var(--panel);border-radius:16px;padding:16px 18px;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.card h2{margin:0 0 8px;color:var(--main-dark);font-size:17px;display:flex;align-items:center;gap:6px}
+
+/* ============ STORY ============ */
+.storyWrap{position:relative}
+.story{max-height:72vh;overflow-y:auto;padding:6px 10px 6px 2px;line-height:2.05;font-size:15px}
+.story p{margin:0 0 10px;text-indent:2em}
+.story p.title{text-align:center;text-indent:0;font-weight:800;color:var(--main-dark);font-size:18px;margin-bottom:6px}
+.sent{transition:background .25s, outline .25s}
+.sent.evMode{cursor:pointer;outline:1.5px dashed #f4b63e;outline-offset:1px;background:rgba(255,243,200,.35);border-radius:4px}
+.sent.evMode:hover{background:#ffe993}
+.sent.evHit{background:#d9f5e6!important;outline:2px solid var(--ok)!important;cursor:default}
+.sent.evWrong{animation:wrong .5s}
+@keyframes wrong{0%,100%{background:transparent}50%{background:#fde0e0}}
+.py{position:relative;border-bottom:1.5px dotted var(--main);cursor:help;padding:0 1px}
+.py:hover,.py.active{background:var(--hl);border-radius:4px}
+.py.opened{border-bottom-color:#3dd28a}
+.py::after{
+  content:attr(data-py) "　" attr(data-m);
+  position:absolute;bottom:130%;left:50%;transform:translateX(-50%);
+  background:#2a2a4e;color:#fff;padding:5px 10px;border-radius:8px;font-size:13px;
+  white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;
+  box-shadow:0 4px 10px rgba(0,0,0,.3);z-index:10;
+}
+.py:hover::after,.py.active::after{opacity:1}
+.hl-para{background:#fff9c4;border-radius:6px;padding:4px 6px;animation:flash 1.2s ease}
+@keyframes flash{0%{background:#fff176}100%{background:#fff9c4}}
+
+/* ============ DOOR BANNER ============ */
+.door{background:linear-gradient(135deg,#3a2a24,#5c3a24);color:#fff8eb;border-radius:12px;padding:12px 16px;margin-bottom:10px;border:2px solid var(--lock);box-shadow:inset 0 0 0 2px #8f6740,0 4px 14px rgba(0,0,0,.3);position:relative}
+.door .lock{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:28px;opacity:.9}
+.door .lock.open{filter:drop-shadow(0 0 6px #f4b63e)}
+.door .dn{font-weight:800;color:var(--accent);font-size:13px;letter-spacing:2px}
+.door .dt{font-size:15px;line-height:1.5;margin-top:3px;padding-right:42px;font-weight:700}
+
+/* ============ EVIDENCE PANEL ============ */
+.evpanel{background:#fff7e0;border-left:4px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:14px;line-height:1.6}
+.evpanel .et{font-weight:800;color:var(--main-dark);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.evpanel .ep{color:#7a5540;font-size:13.5px}
+.evcount{background:#fff;padding:3px 10px;border-radius:999px;font-weight:800;color:var(--main-dark);font-size:13px;border:1.5px solid var(--line)}
+.evcount.done{background:var(--ok);color:#fff;border-color:var(--ok)}
+
+/* ============ PINYIN TUTORIAL ============ */
+.pycards{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.pyc{background:#fffbe8;border:2px dashed var(--line);border-radius:8px;padding:5px 10px;font-size:13.5px;cursor:pointer;font-weight:700;color:var(--main-dark);transition:all .2s}
+.pyc:hover{background:var(--hl);transform:translateY(-2px)}
+.pyc.opened{background:#d9f5e6;border-color:var(--ok);border-style:solid;color:#0e6b3d}
+.pyc .r{display:block;font-size:11px;color:#666;font-weight:400;margin-top:2px}
+.pyc.opened .r{color:#0e6b3d}
+
+/* ============ QUESTION ============ */
+.qhead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.qnum{background:var(--main);color:#fff;padding:3px 10px;border-radius:999px;font-weight:700;font-size:13px}
+.points{background:#ffe;color:#7a5a00;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.qtext{font-weight:700;font-size:15.5px;line-height:1.55;margin:4px 0 10px}
+
+.toolbtns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tbtn{padding:6px 10px;border-radius:999px;border:0;background:var(--soft);color:var(--main-dark);font-size:13px;font-weight:700;cursor:pointer}
+.tbtn:hover{background:var(--line)}
+
+.hintbox{background:#fffbe8;border-left:4px solid var(--accent);padding:10px 12px;border-radius:8px;margin-bottom:10px;font-size:14px;display:none;line-height:1.7}
+.hintbox.show{display:block}
+.hintbox b{color:#a37200}
+
+textarea,input.ti{width:100%;border:2px solid var(--line);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:15px;resize:vertical;background:#fff}
+textarea{min-height:50px}
+textarea:focus,input.ti:focus{outline:0;border-color:var(--main)}
+textarea:disabled,input.ti:disabled{background:#f3ece0;color:#aaa;cursor:not-allowed;border-style:dashed}
+.tlabel{font-size:13px;color:#666;margin:8px 0 2px;font-weight:700}
+.kplist{margin:6px 0 0;padding-left:6px;list-style:none}
+.kplist li{margin:3px 0;font-size:14px;font-weight:600}
+.kplist li.hit{color:#0e6b3d}
+.kplist li.miss{color:#8a2020}
+
+.lockOverlay{background:repeating-linear-gradient(45deg,#f9f0e0,#f9f0e0 8px,#f2e3c9 8px,#f2e3c9 16px);border-radius:10px;padding:10px;text-align:center;font-weight:700;color:#7a5540;font-size:13.5px;border:2px dashed var(--lock);margin-bottom:8px}
+
+.actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:flex-end}
+.btn{padding:10px 20px;border:0;border-radius:10px;font-weight:800;cursor:pointer;font-size:15px}
+.btn.primary{background:var(--main);color:#fff}
+.btn.primary:hover{background:var(--main-dark)}
+.btn.ghost{background:#fff;color:var(--main-dark);border:2px solid var(--main)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.fb{margin-top:10px;padding:10px 12px;border-radius:10px;font-weight:700;display:none}
+.fb.show{display:block}
+.fb.ok{background:#d9f5e6;color:#0e6b3d;border:2px solid var(--ok)}
+.fb.no{background:#fde0e0;color:#8a2020;border:2px solid var(--no)}
+
+/* ============ VICTORY ============ */
+.victory{position:fixed;inset:0;background:rgba(10,10,30,.88);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.victory.show{display:flex}
+.cert{background:linear-gradient(180deg,#fff8e7,#fff0d6);border:8px double #c89d3a;border-radius:18px;padding:30px 24px;max-width:480px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:pop .5s ease}
+@keyframes pop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+.cert h1{margin:0 0 6px;color:#8b5a00;font-size:26px}
+.cert .medal{font-size:70px;margin:10px 0}
+.cert p{margin:6px 0;color:#5a4000;font-size:14.5px;line-height:1.6}
+.cert .stars{font-size:28px;color:var(--accent);margin:6px 0}
+.cert .stat{display:inline-block;background:#fff5d9;margin:3px;padding:5px 12px;border-radius:999px;font-size:13px;font-weight:700;color:#8b5a00}
+
+.float{position:fixed;pointer-events:none;font-weight:800;font-size:22px;animation:flyup 1s ease-out forwards;z-index:50}
+@keyframes flyup{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+
+/* ============ mini-game ============ */
+.miniRules{background:#fffbe8;border-left:4px solid var(--accent);padding:10px 14px;border-radius:10px;font-size:14px;line-height:1.85;margin-bottom:10px}
+.miniRules b{color:#a37200}
+.miniHud{display:flex;justify-content:space-around;background:var(--soft);border-radius:10px;padding:8px;font-size:14px;font-weight:700;margin-bottom:10px}
+.miniStage{position:relative;height:320px;background:linear-gradient(180deg,#fff2d5,#ffe0c0);border-radius:12px;overflow:hidden;border:2px solid var(--line)}
+.wordBubble{position:absolute;padding:8px 14px;font-size:17px;font-weight:800;border-radius:10px;background:#fff;box-shadow:0 4px 10px rgba(0,0,0,.2);cursor:pointer;animation:bubblepop 3.2s ease-out forwards;user-select:none;white-space:nowrap;color:#4a3a24;border:2px solid #f4d78a}
+@keyframes bubblepop{
+  0%{transform:scale(0);opacity:0}
+  10%{transform:scale(1.15);opacity:1}
+  20%{transform:scale(1)}
+  90%{transform:scale(1);opacity:1}
+  100%{transform:scale(.6);opacity:0}
+}
+.wordBubble.clicked{animation:popaway .3s ease forwards!important}
+@keyframes popaway{0%{transform:scale(1)}100%{transform:scale(1.4);opacity:0}}
+.miniResult{text-align:center;padding:10px;margin-top:10px;background:#fff4d9;border-radius:10px;font-weight:700;display:none}
+.miniResult.show{display:block}
+
+/* sequence puzzle */
+.seqStage{padding:10px;background:linear-gradient(180deg,#2a1a1e,#3a2a24);border-radius:12px;color:#fff8eb;min-height:320px}
+.seqSlots{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px}
+.slot{aspect-ratio:1;background:rgba(255,248,235,.08);border:2px dashed #8f6740;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#f4b63e;min-height:48px}
+.slot.filled{background:#3dd28a;border-style:solid;border-color:#3dd28a;color:#fff;font-size:13px;padding:4px;text-align:center;line-height:1.2}
+.slot.active{background:rgba(244,182,62,.2);border-color:#f4b63e;animation:pulse 1.2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.eventList{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.evCard{background:#fff8eb;color:#3a2a24;border-radius:10px;padding:10px 8px;font-size:13.5px;font-weight:700;cursor:pointer;text-align:center;line-height:1.3;border:2px solid #f4d78a;transition:all .2s;min-height:56px;display:flex;align-items:center;justify-content:center}
+.evCard:hover{background:#fff5d9;transform:translateY(-2px)}
+.evCard.used{opacity:.25;pointer-events:none}
+.evCard.wrong{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* streak banner */
+.streak{position:fixed;top:30%;left:50%;transform:translateX(-50%);font-size:40px;font-weight:900;color:var(--accent);text-shadow:0 4px 14px rgba(0,0,0,.7),0 0 20px var(--accent);pointer-events:none;z-index:80;animation:streakpop 1.3s ease forwards;white-space:nowrap}
+@keyframes streakpop{
+  0%{transform:translate(-50%,10px) scale(.3);opacity:0}
+  30%{transform:translate(-50%,0) scale(1.3);opacity:1}
+  70%{transform:translate(-50%,0) scale(1);opacity:1}
+  100%{transform:translate(-50%,-30px) scale(1);opacity:0}
+}
+
+/* ============ gate ============ */
+.gate{position:fixed;inset:0;background:
+  radial-gradient(circle at 20% 30%, rgba(244,182,62,.25) 0%, transparent 50%),
+  linear-gradient(160deg,#3a2a24,#1a1014);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.gate.hide{display:none}
+.gateCard{background:linear-gradient(180deg,#fff8eb,#ffefd2);border-radius:18px;padding:24px 24px;max-width:480px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:pop .45s ease;border:3px solid var(--lock)}
+.gateCard h1{margin:6px 0 4px;color:var(--main-dark);font-size:23px;line-height:1.3}
+.gateCard .sub{color:#7a5540;font-size:13.5px;margin:0 0 12px;line-height:1.55}
+.gateCard .rules{background:#fff3e0;border-left:4px solid var(--accent);border-radius:10px;padding:12px 14px;font-size:14px;line-height:1.9;text-align:left;color:#4a3a24;margin-bottom:14px}
+.gateCard .rules b{color:var(--main-dark)}
+.gateCard .rules .r{display:flex;gap:8px;align-items:flex-start;margin:2px 0}
+.gateCard .rules .r .num{flex-shrink:0;background:var(--main);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.gateCard label{display:block;text-align:left;font-weight:700;color:#4a3a24;font-size:14px;margin:6px 0 6px}
+.gateCard input{width:100%;border:2px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px;font-family:inherit;margin-bottom:14px;background:#fff}
+.gateCard input:focus{outline:0;border-color:var(--main)}
+.gateCard .btn{width:100%;font-size:17px;padding:12px}
+.gateCard .foot{color:#8a7560;font-size:12.5px;margin:14px 0 4px;line-height:1.5}
+.teacherLink{display:inline-block;margin-top:6px;color:var(--main);font-size:13px;text-decoration:none;font-weight:700}
+.teacherLink:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<!-- 登入页 -->
+<div class="gate" id="gate">
+  <div class="gateCard">
+    <div style="font-size:44px">🔒🏫</div>
+    <h1>沉默教室 · 心锁逃脱</h1>
+    <p class="sub">《可贵的沉默》· 五年级高华 第3课</p>
+    <div class="rules">
+      <div class="r"><span class="num">1</span><div><b>5 道题 + 2 个小游戏</b>，集齐 <b>🔑 5 把钥匙</b> 就能出教室。</div></div>
+      <div class="r"><span class="num">2</span><div>每一题，都要先在<b>左边课文里点对的句子</b>，答题框才会打开。</div></div>
+      <div class="r"><span class="num">3</span><div>多<b>📖 读课文</b> = 更好的结局。</div></div>
+    </div>
+    <label>请输入你的姓名（或座号 + 班级）：</label>
+    <input id="playerName" type="text" placeholder="例如：5E 12 李明" maxlength="30"/>
+    <button class="btn primary" id="gateStart">🗝️ 开始闯关</button>
+    <p class="foot">作答自动保存到云端，老师能在后台看到你的进度。</p>
+    <a href="teacher.html" class="teacherLink" target="_blank">👩‍🏫 老师后台</a>
+  </div>
+</div>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="mascot" title="你的体谅心">💖</div>
+  <div class="title">🔒 沉默教室 · 心锁逃脱
+    <small>《可贵的沉默》· 5 道题 + 2 小游戏 · 读懂课文才能出教室</small>
+  </div>
+  <div class="hudbox key">🔑 <span id="star">0</span>/5</div>
+  <div class="hudbox flower">🌸 <span id="coin">0</span></div>
+  <div class="hudbox read">📖 <span id="readDepth">0</span></div>
+  <div class="hudbox">
+    <span style="font-size:12px">🔒</span>
+    <div class="lifebar"><div class="lifefill" id="lifefill"></div><div class="lifelbl" id="lifelbl">100</div></div>
+  </div>
+</div>
+
+<!-- Progress -->
+<div class="progress" id="nodes"></div>
+
+<!-- Main -->
+<div class="main">
+  <div class="card">
+    <h2>📖 课文 · 所有证据都在这里</h2>
+    <div class="storyWrap"><div class="story" id="story"></div></div>
+  </div>
+
+  <div class="card">
+    <div id="qbody"></div>
+  </div>
+</div>
+
+<!-- Victory -->
+<div class="victory" id="victory">
+  <div class="cert">
+    <h1 id="vtitle">🏆 逃脱成功！</h1>
+    <div class="medal" id="medal">🥇</div>
+    <p id="certLine">体谅之锁打开，你走出了沉默教室……</p>
+    <div class="stars" id="certStars">🔑🔑🔑🔑🔑</div>
+    <div>
+      <span class="stat">🔑 <span id="certKeys">0</span>/5 钥匙</span>
+      <span class="stat">🌸 <span id="certCoin">0</span> 花</span>
+      <span class="stat">📖 <span id="certRead">0</span> 精读度</span>
+      <span class="stat">🔒 <span id="certLife">100</span> 门锁</span>
+    </div>
+    <p id="certRank" style="font-size:18px;font-weight:800;color:#8b5a00;margin-top:10px"></p>
+    <p id="certEnding" style="font-size:13.5px;color:#5a3a24;background:#fff3e0;padding:10px;border-radius:8px;margin-top:10px"></p>
+    <button class="btn primary" onclick="document.getElementById('victory').classList.remove('show')">继续回味</button>
+    <button class="btn ghost" onclick="location.reload()" style="margin-left:8px">重新挑战</button>
+  </div>
+</div>
+
+<script type="module">
+import {
+  ensureAuth, col, addDoc, updateDoc, serverTimestamp
+} from '../_shared/firebase.js';
+
+/* ============ 难词拼音 ============ */
+const DICT = {
+  '七嘴八舌':['qī zuǐ bā shé','很多人同时说话'],
+  '谈论':['tán lùn','讨论、聊'],
+  '聚会':['jù huì','大家聚在一起的活动'],
+  '响亮':['xiǎng liàng','声音很大很清楚'],
+  '神气十足':['shén qì shí zú','非常得意的样子'],
+  '手舞足蹈':['shǒu wǔ zú dǎo','高兴得又挥手又跳脚'],
+  '劳累':['láo lèi','很辛苦、很累'],
+  '鸦雀无声':['yā què wú shēng','非常安静，一点声音也没有'],
+  '左顾右盼':['zuǒ gù yòu pàn','左看看、右看看'],
+  '脏兮兮':['zāng xī xī','非常脏'],
+  '语重心长':['yǔ zhòng xīn cháng','说话认真而有深意'],
+  '辛勤':['xīn qín','勤劳辛苦'],
+  '烦恼':['fán nǎo','心里不开心、苦恼'],
+  '养育':['yǎng yù','抚养、教育'],
+  '回报':['huí bào','报答'],
+  '沉默':['chén mò','不说话'],
+  '异口同声':['yì kǒu tóng shēng','大家同时说出一样的话'],
+  '欣慰':['xīn wèi','感到高兴而放心'],
+  '可贵':['kě guì','值得珍惜'],
+  '爱惜':['ài xī','珍爱、不浪费'],
+  '回想':['huí xiǎng','回忆'],
+  '道理':['dào lǐ','事情的规律、做人的原则'],
+  '体谅':['tǐ liàng','理解、体贴别人'],
+  '错误':['cuò wù','错的地方'],
+};
+
+/* ============ 短文按「句」切 ============ */
+const STORY = [
+  { title:true, text:'可贵的沉默' },
+  { id:'p1', sents:[
+    '上个星期五的班会上，同学们正七嘴八舌地谈论着即将到来的班级聚会。',
+    '大家越说越兴奋，声音十分响亮，有的同学甚至神气十足地站到了椅子上手舞足蹈。',
+  ]},
+  { id:'p2', sents:[
+    '就在这时，林老师走进了课室。',
+    '她看起来脸色苍白，十分劳累。',
+    '看到老师进来，课室里立刻变得鸦雀无声。',
+    '大家左顾右盼，发现林老师的手里拿着一个脏兮兮的饭盒。',
+  ]},
+  { id:'p3', sents:[
+    '林老师叹了一口气，语重心长地说：「同学们，学校的清洁工王阿姨每天辛勤工作，为我们保持校园的整洁。',
+    '可是今天，有人把吃剩的饭盒随手扔在走廊上，还弄脏了墙壁。',
+    '这不仅增加了她的工作量，也让她十分烦恼。',
+    '父母在家里辛苦养育我们，社会上的长辈也在为我们服务，难道我们就这样回报别人吗？」',
+  ]},
+  { id:'p4', sents:[
+    '听了老师的话，全班同学陷入了沉默。',
+    '大家都低下了头，好像做错了事似的。',
+    '我知道那个饭盒是我和几个同学吃完后乱丢的。',
+    '我们只顾着玩，却犯下了这样的错误，真是不应该。',
+  ]},
+  { id:'p5', sents:[
+    '我赶紧站了起来，红着脸对老师说：「老师，对不起，饭盒是我们丢的。',
+    '我们一定会去向王阿姨道歉，并把墙壁清理干净。」',
+    '那几个一起吃午餐的同学也异口同声地说：「我们也会一起去帮忙！」',
+  ]},
+  { id:'p6', sents:[
+    '林老师听了，脸上露出了欣慰的笑容。',
+    '她说：「知错能改，这种精神十分可贵。',
+    '老师希望你们以后能爱惜别人的劳动成果。」',
+    '回想起那件事，我明白了许多道理。',
+    '我们当然不能只顾自己，更要懂得体谅别人的辛苦。',
+  ]},
+];
+
+function annotate(text){
+  const keys = Object.keys(DICT).sort((a,b)=>b.length-a.length);
+  let out = text;
+  keys.forEach(w=>{
+    const re = new RegExp(w,'g');
+    out = out.replace(re, `<span class="py" data-py="${DICT[w][0]}" data-m="${DICT[w][1]}" data-word="${w}">${w}</span>`);
+  });
+  return out;
+}
+
+function renderStory(){
+  const box = document.getElementById('story');
+  box.innerHTML = STORY.map(p=>{
+    if(p.title) return `<p class="title">${p.text}</p>`;
+    const inner = p.sents.map((s,i)=>`<span class="sent" data-sid="${p.id}-${i}">${annotate(s)}</span>`).join('');
+    return `<p id="${p.id}">${inner}</p>`;
+  }).join('');
+}
+renderStory();
+
+function highlightPara(id){
+  const p = document.getElementById(id);
+  if(!p) return;
+  p.classList.remove('hl-para'); void p.offsetWidth;
+  p.classList.add('hl-para');
+  p.scrollIntoView({behavior:'smooth',block:'center'});
+}
+window.highlightPara = highlightPara;
+
+/* ============ 状态 ============ */
+const state = {
+  coin:0, star:0, life:100, level:0, stars:[],
+  readDepth:0,
+  evCollected:{},
+  pyOpened:new Set(),
+  evRequiredMet:{},
+};
+
+function updHud(){
+  document.getElementById('coin').textContent = state.coin;
+  document.getElementById('star').textContent = state.star;
+  document.getElementById('readDepth').textContent = state.readDepth;
+  const lf = document.getElementById('lifefill');
+  lf.style.width = Math.max(0,state.life)+'%';
+  lf.classList.toggle('low', state.life<40);
+  document.getElementById('lifelbl').textContent = Math.max(0,state.life);
+}
+function addCoin(n,ev){
+  state.coin += n; updHud();
+  if(ev){
+    const f = document.createElement('div');
+    f.className='float'; f.textContent = (n>0?'+':'')+n+' 🌸';
+    f.style.color = n>0?'#e55589':'#ef5b5b';
+    f.style.left = (ev.clientX||window.innerWidth/2)+'px';
+    f.style.top = (ev.clientY||100)+'px';
+    document.body.appendChild(f);
+    setTimeout(()=>f.remove(),1000);
+  }
+}
+function addLife(n){ state.life = Math.max(0,Math.min(100,state.life+n)); updHud(); }
+function addRead(n,ev){
+  state.readDepth += n; updHud();
+  if(ev){
+    const f = document.createElement('div');
+    f.className='float'; f.textContent = (n>0?'+':'')+n+' 📖';
+    f.style.color = '#1e6b3d';
+    f.style.left = (ev.clientX||window.innerWidth/2)+'px';
+    f.style.top = (ev.clientY||100)+'px';
+    document.body.appendChild(f);
+    setTimeout(()=>f.remove(),1000);
+  }
+}
+
+/* ============ 关卡：5 题 + 2 小游戏 ============ */
+const LEVELS = [
+  /* L0 = 钥匙① (Q34) */
+  { id:'钥匙①', doorNum:'第 ❶ 关 · 找词语', points:2, para:'p2',
+    type:'exact',
+    intro:'找出课文里表示"很安静"的四字词语。',
+    q:'【Q34】文中表示"非常安静，一点声音也没有"的词语是：',
+    placeholder:'请写下那个四字词语……',
+    answer:'鸦雀无声',
+    hint:'看第②段："看到老师进来，课室里<b>立刻变得……</b>"，中间的四字词就是答案。',
+    evidence:{ sids:['p2-2'], required:1, prompt:'在左边课文里，找到并点一下写"课室安静下来"的那句话。' },
+    pyTutorial:['鸦雀无声','语重心长','神气十足']
+  },
+  /* L1 = 小游戏 1 */
+  { id:'🎮', doorNum:'🧹 走廊清扫', type:'minigame', subtype:'wordhunt',
+    title:'清出"道歉之路"',
+    howto:[
+      '走廊上会飘出很多词语。',
+      '<b style="color:#0e6b3d">只点课文里出现过的词</b>（例如：鸦雀无声、七嘴八舌……）',
+      '<b style="color:#8a2020">不要点陷阱词</b>（听起来很像，但课文里其实没有！）',
+    ],
+    rewards:'✅ 课文真词 → +3 🌸 +2 📖　　❌ 陷阱词 → -2 🌸 -3 🔒',
+    time:'⏱ 25 秒后自动结算',
+    duration:25, spawnMs:700,
+    wordReal:['鸦雀无声','语重心长','七嘴八舌','神气十足','手舞足蹈','异口同声','左顾右盼','脏兮兮','欣慰','辛勤','烦恼','可贵','爱惜','体谅','沉默','劳累'],
+    wordFake:['窃窃私语','兴高采烈','滔滔不绝','喋喋不休','眉飞色舞','指手画脚','怒气冲冲','忐忑不安','面红耳赤','议论纷纷','心灰意冷','垂头丧气']
+  },
+  /* L2 = 钥匙② (Q37) */
+  { id:'钥匙②', doorNum:'第 ❷ 关 · 反应 + 原因', points:4, para:'p2',
+    type:'twoInput',
+    intro:'同学们看到林老师走进来时有什么反应？为什么会这样？',
+    q:'【Q37】看到林老师走进来后，同学们有什么反应？他们为什么会这样？',
+    hint:'• <b>反应</b>（2分）：教室变成什么样子？同学们还做了什么小动作？<br>• <b>原因</b>（2分）：老师的脸色怎样？她手里拿着什么？',
+    evidence:{ sids:['p2-1','p2-2','p2-3'], required:2, prompt:'在第 ② 段，点 2 句：一句写同学们的样子，一句写老师不一样的地方（脸色？手里的东西？）。' },
+    part1:{ label:'① 反应（2分）', rows:3, placeholder:'同学们变成什么样子？还做了什么动作？',
+      keyPoints:[
+        {label:'课室立刻鸦雀无声 / 安静下来', any:['鸦雀无声','安静','不说话','静下来']},
+        {label:'大家左顾右盼 / 东张西望', any:['左顾右盼','东张西望','看来看去','互相看']},
+      ], avoid:['道歉','清理','墙壁','欣慰','养育']},
+    part2:{ label:'② 原因（2分）', rows:3, placeholder:'为什么大家会这样？',
+      keyPoints:[
+        {label:'看到老师脸色苍白、十分劳累', any:['脸色','苍白','劳累','累','不舒服']},
+        {label:'发现老师手里拿着脏兮兮的饭盒', any:['饭盒','脏','发生','不好','不妙','严重','不对劲']},
+      ], avoid:['道歉','清理','欣慰','养育']}
+  },
+  /* L3 = 钥匙③ (Q38) */
+  { id:'钥匙③', doorNum:'第 ❸ 关 · 烦恼原因', points:3, para:'p3',
+    type:'input', rows:4,
+    intro:'王阿姨为什么这么烦恼？',
+    q:'【Q38】学校的清洁工王阿姨为什么会感到十分烦恼？',
+    placeholder:'请写出 2-3 个原因……',
+    hint:'看第③段林老师的话：<br>• 有人做了什么坏事？（丢什么 + 弄脏什么）<br>• 王阿姨因此多了什么负担？',
+    evidence:{ sids:['p3-1','p3-2'], required:2, prompt:'在第 ③ 段，点 2 句：一句写"发生了什么坏事"，一句写"王阿姨因此更辛苦"。' },
+    keyPoints:[
+      {label:'有人把吃剩的饭盒随手扔在走廊上', any:['饭盒','走廊','随手','扔','乱丢','丢']},
+      {label:'还把墙壁弄脏了', any:['墙壁','弄脏','脏']},
+      {label:'增加了她的工作量 / 让她更辛苦', any:['工作量','增加','辛苦','负担','更累']},
+    ],
+    avoid:['欣慰','笑容','道歉','聚会','兴奋']
+  },
+  /* L4 = 小游戏 2 */
+  { id:'🎮', doorNum:'🔦 情节密码锁', type:'minigame', subtype:'sequence',
+    title:'7 事件·按课文顺序排',
+    howto:[
+      '下面有 7 个事件，顺序被打乱了。',
+      '请按<b>课文里事情发生的先后顺序</b>，一个一个点。',
+      '点错了也没关系，可以继续试。',
+    ],
+    rewards:'✅ 点对 → +2 🌸 +2 📖　　❌ 点错 → -3 🔒',
+    time:'⏱ 60 秒 · 7 张全排对即成功',
+    duration:60,
+    events:[
+      {order:1, text:'同学们七嘴八舌讨论班级聚会'},
+      {order:2, text:'林老师走进课室（脸色苍白）'},
+      {order:3, text:'课室立刻鸦雀无声'},
+      {order:4, text:'林老师语重心长地批评'},
+      {order:5, text:'"我"红着脸站起来道歉'},
+      {order:6, text:'同学们异口同声响应帮忙'},
+      {order:7, text:'林老师露出欣慰的笑容'},
+    ]
+  },
+  /* L5 = 钥匙④ (Q39) */
+  { id:'钥匙④', doorNum:'第 ❹ 关 · 行动 + 反应', points:4, para:'p5',
+    type:'twoInput',
+    intro:'"我"和几个同学做了什么？林老师怎么回应？',
+    q:'【Q39】听了林老师的话后，"我"和几个同学采取了什么行动？林老师对此有什么反应？',
+    hint:'• <b>行动</b>（2分）看第⑤段："我"站起来说了什么？答应做什么？其他同学怎么回应？<br>• <b>反应</b>（2分）看第⑥段：林老师的表情 + 她说的话。',
+    evidence:{ sids:['p5-0','p5-1','p5-2','p6-0','p6-1','p6-2'], required:2, prompt:'点 2 句：一句在第 ⑤ 段（我们说了/答应了什么），一句在第 ⑥ 段（老师的笑容 / 老师的话）。' },
+    part1:{ label:'① 我们的行动（2分）', rows:3, placeholder:'"我"和同学们做了什么？',
+      keyPoints:[
+        {label:'主动站起来 / 承认错误 / 道歉', any:['站起来','承认','道歉','对不起','认错']},
+        {label:'答应去向王阿姨道歉并清理墙壁 / 帮忙', any:['清理','帮忙','墙壁','王阿姨','一起']},
+      ], avoid:['七嘴八舌','手舞足蹈','聚会','椅子']},
+    part2:{ label:'② 林老师的反应（2分）', rows:3, placeholder:'林老师的表情 + 说的话……',
+      keyPoints:[
+        {label:'露出欣慰的笑容 / 高兴', any:['欣慰','笑容','笑','高兴','露出']},
+        {label:'表扬"知错能改"是可贵的精神 / 希望我们爱惜别人劳动成果', any:['知错能改','可贵','爱惜','劳动成果','表扬','夸','希望']},
+      ], avoid:['七嘴八舌','手舞足蹈','聚会','椅子','苍白','劳累']}
+  },
+  /* L6 = 钥匙⑤ 终极 (Q40) */
+  { id:'钥匙⑤', doorNum:'第 ❺ 关 · 终极 · 道理 + 例子', points:4, para:'p6',
+    type:'opinion',
+    intro:'写出课文里"我"明白的道理 + 你在生活中的一个例子。',
+    q:'【Q40】文中的"我"从这件事中明白了什么道理？在日常生活中，当你看到别人在辛苦工作时（例如清洁工、服务员等），你会怎么做？请举一个例子说明。',
+    hint:'• <b>道理</b>（2分）看第⑥段最后：不能只顾什么？要懂得什么？<br>• <b>例子</b>（2分）要写齐三层：<br>　①在哪里（场景）　②做什么（行动）　③为了什么（结果/目的）',
+    evidence:{ sids:['p6-3','p6-4'], required:1, prompt:'在第 ⑥ 段最后，点一下写"我明白了道理……"或"更要懂得……"的那一句。' },
+    fields:[
+      { id:'lesson', label:'① "我"明白的道理（2分）', rows:3, placeholder:'课文里"我"明白了什么？',
+        keyPoints:[
+          {label:'不能只顾自己，要体谅别人的辛苦', any:['只顾自己','只想自己','体谅','辛苦','体贴']},
+          {label:'要爱惜别人的劳动成果', any:['爱惜','劳动成果','珍惜','尊重','劳动']},
+        ], needHits:1 },
+      { id:'example', label:'② 你的生活例子（2分 · 要写齐：场景 + 行动 + 结果）', rows:5, placeholder:'例如：在食阁吃完饭（场景），我会把托盘还到回收处、保持桌面干净（行动），减轻清洁工人的负担（结果）。',
+        keyPoints:[
+          {label:'场景：在哪里 / 什么时候', any:['食阁','餐馆','餐厅','学校','家里','巴士','商店','超市','公园','走廊','课室','厕所']},
+          {label:'行动：你具体做什么', any:['归还','回收','还到','整理','保持','清理','说谢谢','道谢','帮忙','主动','不乱丢','收拾']},
+          {label:'结果：减轻辛苦 / 表示体谅', any:['减轻','负担','体谅','尊重','辛苦','感谢','劳动']},
+        ],
+        avoid:['鸦雀无声','语重心长','林老师','王阿姨','饭盒','墙壁']},
+    ]
+  }
+];
+
+/* ============ 节点 ============ */
+function renderNodes(){
+  const box = document.getElementById('nodes');
+  const labels = ['❶','🧹','❷','❸','🔦','❹','❺'];
+  box.innerHTML = LEVELS.map((L,i)=>{
+    let cls='node';
+    if(i===state.level) cls+=' current';
+    else if(state.stars[i]) cls+=' done';
+    else if(i>state.level) cls+=' locked';
+    const t = state.stars[i] ? '✓' : labels[i];
+    return `<div class="${cls}" data-i="${i}">${t}<span class="lbl">${L.type==='minigame'?'游戏':'答题'}</span></div>`;
+  }).join('');
+  box.querySelectorAll('.node').forEach(n=>{
+    n.onclick = ()=>{
+      const i=+n.dataset.i;
+      if(i<=state.level || state.stars[i]){ state.level=i; renderAll(); }
+    };
+  });
+}
+
+/* ============ 证据点亮 ============ */
+function enterEvidenceMode(L){
+  clearEvidenceMode();
+  if(!L.evidence) return;
+  const required = new Set(L.evidence.sids);
+  const already = state.evCollected[state.level] || new Set();
+  document.querySelectorAll('.sent').forEach(s=>{
+    const sid = s.dataset.sid;
+    if(required.has(sid)){
+      if(already.has(sid)){
+        s.classList.add('evHit');
+      }else{
+        s.classList.add('evMode');
+      }
+    }else{
+      s.classList.add('evMode');
+      s.dataset.evWrong='1';
+    }
+    s.onclick = (ev)=>{
+      if(ev.target.classList.contains('py')) return;
+      const sidC = s.dataset.sid;
+      if(required.has(sidC)){
+        if(already.has(sidC)) return;
+        already.add(sidC);
+        state.evCollected[state.level] = already;
+        s.classList.remove('evMode'); s.classList.add('evHit');
+        addRead(1, ev);
+        updateEvUI(L);
+        const pid = sidC.split('-')[0];
+        const p = document.getElementById(pid);
+        if(p && !p.classList.contains('hl-para')){
+          p.classList.add('hl-para');
+          setTimeout(()=>p.classList.remove('hl-para'), 800);
+        }
+      } else {
+        s.classList.add('evWrong');
+        setTimeout(()=>s.classList.remove('evWrong'), 500);
+        showToast('这句不是本题要的，再找找 👀');
+      }
+    };
+  });
+}
+function clearEvidenceMode(){
+  document.querySelectorAll('.sent').forEach(s=>{
+    s.classList.remove('evMode','evHit','evWrong');
+    s.onclick = null;
+    delete s.dataset.evWrong;
+  });
+}
+function updateEvUI(L){
+  const already = state.evCollected[state.level] || new Set();
+  const got = Array.from(already).length;
+  const need = L.evidence.required;
+  const cnt = document.getElementById('evcount');
+  if(cnt){
+    cnt.textContent = `${got} / ${need}`;
+    if(got>=need) cnt.classList.add('done');
+  }
+  state.evRequiredMet[state.level] = (got>=need);
+  if(got>=need){
+    document.querySelectorAll('#qbody textarea, #qbody input.ti').forEach(el=>{ el.disabled = false; });
+    const lo = document.getElementById('lockOverlay');
+    if(lo) lo.style.display='none';
+    const chk = document.getElementById('checkBtn');
+    if(chk) chk.disabled = false;
+  }
+}
+
+let toastTimer = null;
+function showToast(msg){
+  let t = document.getElementById('toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id='toast';
+    t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#2a1a1e;color:#fff8eb;padding:10px 20px;border-radius:999px;font-weight:700;font-size:14px;z-index:120;box-shadow:0 8px 24px rgba(0,0,0,.5);opacity:0;transition:opacity .25s';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity='1';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.style.opacity='0'; }, 1600);
+}
+
+/* ============ 工具条 ============ */
+function toolBar(L){
+  return `<div class="toolbtns">
+    <button class="tbtn" onclick="highlightPara('${L.para}')">📍 翻到这段</button>
+    <button class="tbtn" onclick="document.getElementById('hintbox').classList.toggle('show')">💡 提示</button>
+  </div>
+  <div class="hintbox" id="hintbox"><b>提示：</b><br>${L.hint}</div>`;
+}
+
+function inputEl(id, rows, placeholder, disabled){
+  const dis = disabled?'disabled':'';
+  if(rows===1) return `<input id="${id}" class="ti" placeholder="${placeholder||''}" ${dis}/>`;
+  return `<textarea id="${id}" rows="${rows||4}" placeholder="${placeholder||''}" ${dis}></textarea>`;
+}
+
+/* ============ Q 渲染 ============ */
+function renderQ(){
+  const L = LEVELS[state.level];
+
+  if(L.type==='minigame'){
+    clearEvidenceMode();
+    return renderMini(L);
+  }
+
+  const evMet = state.evRequiredMet[state.level] || false;
+  const already = state.evCollected[state.level] || new Set();
+  const got = Array.from(already).length;
+  const need = L.evidence?L.evidence.required:0;
+
+  let html = `
+    <div class="door">
+      <div class="dn">${L.doorNum}</div>
+      <div class="dt">${L.intro}</div>
+      <div class="lock ${evMet?'open':''}">${evMet?'🔓':'🔒'}</div>
+    </div>
+    <div class="qhead">
+      <span class="qnum">${L.id}</span>
+      <span class="points">${L.points}分</span>
+    </div>
+    <div class="qtext">${L.q}</div>`;
+
+  // 拼音卡（只 Q1 显示，帮助熟悉难词）
+  if(L.pyTutorial && !state.pyOpened.has('tut_'+state.level)){
+    html += `<div class="evpanel">
+      <div class="et">🈶 先认识 3 个难词 <span class="evcount" id="pycount">0 / 3</span></div>
+      <div class="ep">点一下卡片看拼音和意思（每张 +1 📖）</div>
+      <div class="pycards">${L.pyTutorial.map(w=>`<div class="pyc" data-w="${w}">${w}<span class="r">点一下看拼音</span></div>`).join('')}</div>
+    </div>`;
+  }
+
+  // 证据锁说明
+  if(L.evidence){
+    html += `<div class="evpanel">
+      <div class="et">🔍 第 1 步：回课文找证据 <span class="evcount ${got>=need?'done':''}" id="evcount">${got} / ${need}</span></div>
+      <div class="ep">${L.evidence.prompt}<br>点够 <b>${need}</b> 句，下面的答题框就会打开。</div>
+    </div>`;
+  }
+
+  html += toolBar(L);
+
+  const dis = L.evidence && !evMet;
+  if(dis){
+    html += `<div class="lockOverlay" id="lockOverlay">🔒 答题框未开启 · 请先在左边课文<b>点 ${need} 句证据</b></div>`;
+  } else {
+    html += `<div style="font-size:13px;color:#1e6b3d;font-weight:700;margin-bottom:6px">✅ 第 2 步：写答案</div>`;
+  }
+
+  if(L.type==='exact'){
+    html += inputEl('ans', 1, L.placeholder, dis);
+  }
+  else if(L.type==='input'){
+    html += inputEl('ans', L.rows, L.placeholder, dis);
+  }
+  else if(L.type==='twoInput'){
+    html += `<div class="tlabel">${L.part1.label}</div>${inputEl('ans1', L.part1.rows, L.part1.placeholder, dis)}
+             <div class="tlabel">${L.part2.label}</div>${inputEl('ans2', L.part2.rows, L.part2.placeholder, dis)}`;
+  }
+  else if(L.type==='opinion'){
+    L.fields.forEach(f=>{
+      html += `<div class="tlabel">${f.label}</div>${inputEl(f.id, f.rows, f.placeholder, dis)}`;
+    });
+  }
+
+  html += `<div class="fb" id="fb"></div>
+    <div class="actions">
+      <button class="btn ghost" id="checkBtn" ${dis?'disabled':''}>📤 提交答案</button>
+      <button class="btn primary" id="nextBtn" disabled>${state.level===LEVELS.length-1?'走出教室 🚪':'下一关 ▶'}</button>
+    </div>`;
+
+  document.getElementById('qbody').innerHTML = html;
+
+  if(L.pyTutorial){
+    const pyCnt = document.getElementById('pycount');
+    let opened = 0;
+    document.querySelectorAll('.pyc').forEach(card=>{
+      card.onclick = (ev)=>{
+        if(card.classList.contains('opened')) return;
+        card.classList.add('opened');
+        const w = card.dataset.w;
+        const [py,m] = DICT[w] || ['',''];
+        card.querySelector('.r').textContent = py + ' · ' + m;
+        opened++;
+        pyCnt.textContent = `${opened} / 3`;
+        if(opened>=3){ pyCnt.classList.add('done'); state.pyOpened.add('tut_'+state.level); }
+        addRead(1, ev);
+      };
+    });
+  }
+
+  if(L.evidence) enterEvidenceMode(L);
+
+  bindHandlers(L);
+}
+
+/* ============ 评分 ============ */
+function scoreText(text, keyPoints, avoid){
+  const t = (text||'').trim();
+  const hit=[], miss=[];
+  keyPoints.forEach(kp=>{
+    const got = kp.any.some(k=>t.includes(k));
+    (got?hit:miss).push(kp);
+  });
+  const foundAvoid = (avoid||[]).filter(a=>t.includes(a));
+  return {hit, miss, avoid:foundAvoid, ok:miss.length===0 && foundAvoid.length===0};
+}
+function kpHtml(r){
+  const kw = k => k.any.slice(0,3).join('、');
+  const h = r.hit.map(k=>`<li class="hit">✓ ${k.label}　<span style="color:#666;font-weight:400;font-size:13px">关键词：${kw(k)}</span></li>`).join('');
+  const m = r.miss.map(k=>`<li class="miss">✗ ${k.label}　<span style="color:#666;font-weight:400;font-size:13px">关键词：${kw(k)}</span></li>`).join('');
+  let a = '';
+  if(r.avoid && r.avoid.length){
+    a = `<li class="miss">⚠️ <b>多写了无关的东西</b>：「${r.avoid.join('」「')}」这些跟本题没关系。</li>`;
+  }
+  return `<ul class="kplist">${h}${m}${a}</ul>`;
+}
+function getVal(id){
+  const el = document.getElementById(id);
+  return el ? (el.value||'').trim() : '';
+}
+
+/* ============ 提交 ============ */
+function bindHandlers(L){
+  const btn = document.getElementById('checkBtn');
+  if(!btn) return;
+
+  if(L.type==='exact'){
+    btn.onclick = (ev)=>{
+      const t = getVal('ans');
+      if(!t){ feedback(false,'请先写下答案～'); return; }
+      const ok = t.includes(L.answer);
+      const firstTry = !(state.record.answers[L.id] && state.record.answers[L.id].attempts>0);
+      if(ok){
+        feedback(true, `🔓 密码正确！答案是「<b>${L.answer}</b>」。`);
+        if(!firstTry) addRead(3, ev);
+        awardKey(ev);
+      }else{
+        feedback(false, `不对哦，再读一读第 ② 段找找那个四字词语。🔒 门锁 -5`);
+        addLife(-5); updHud();
+      }
+      saveAnswer(L.id, {type:'exact', q:L.q, answer:t, expected:L.answer, passed:ok});
+    };
+  }
+  else if(L.type==='input'){
+    btn.onclick = (ev)=>{
+      const t = getVal('ans');
+      if(t.length<5){ feedback(false,'答案要多写一点（至少一句话）。'); return; }
+      const r = scoreText(t, L.keyPoints, L.avoid);
+      const firstTry = !(state.record.answers[L.id] && state.record.answers[L.id].attempts>0);
+      if(r.ok){
+        feedback(true, `🔑 钥匙到手！答得很完整。${kpHtml(r)}`);
+        if(!firstTry) addRead(3, ev);
+        awardKey(ev, state.level===LEVELS.length-1);
+      }else{
+        const av = r.avoid.length?`，有 ${r.avoid.length} 处写错`:'';
+        feedback(false, `答对 ${r.hit.length} / ${L.keyPoints.length} 点${av}。<b>回去重读再答对可 +3 📖</b>${kpHtml(r)}`);
+        addLife(-5); updHud();
+      }
+      saveAnswer(L.id, {
+        type:'input', q:L.q, answer:t, passed:r.ok,
+        hit:r.hit.map(k=>k.label), miss:r.miss.map(k=>k.label), avoid:r.avoid
+      });
+    };
+  }
+  else if(L.type==='twoInput'){
+    btn.onclick = (ev)=>{
+      const t1 = getVal('ans1'), t2 = getVal('ans2');
+      if(t1.length<3 || t2.length<3){ feedback(false,'两部分都要写哦～'); return; }
+      const r1 = scoreText(t1, L.part1.keyPoints, L.part1.avoid);
+      const r2 = scoreText(t2, L.part2.keyPoints, L.part2.avoid);
+      const total = L.part1.keyPoints.length + L.part2.keyPoints.length;
+      const got = r1.hit.length + r2.hit.length;
+      const firstTry = !(state.record.answers[L.id] && state.record.answers[L.id].attempts>0);
+      if(r1.ok && r2.ok){
+        feedback(true, `🔑 两部分都完整，钥匙到手！<br><b>① </b>${kpHtml(r1)}<b>② </b>${kpHtml(r2)}`);
+        if(!firstTry) addRead(3, ev);
+        awardKey(ev);
+      }else{
+        feedback(false, `答对 ${got} / ${total} 点。<b>回去重读再答对可 +3 📖</b><br><b>① </b>${kpHtml(r1)}<b>② </b>${kpHtml(r2)}`);
+        addLife(-5); updHud();
+      }
+      saveAnswer(L.id, {
+        type:'twoInput', q:L.q, passed:(r1.ok && r2.ok),
+        part1:{answer:t1, hit:r1.hit.map(k=>k.label), miss:r1.miss.map(k=>k.label), avoid:r1.avoid},
+        part2:{answer:t2, hit:r2.hit.map(k=>k.label), miss:r2.miss.map(k=>k.label), avoid:r2.avoid}
+      });
+    };
+  }
+  else if(L.type==='opinion'){
+    btn.onclick = (ev)=>{
+      const problems=[], reports=[];
+      let allOk = true;
+      const fieldSnaps = {};
+
+      L.fields.forEach(f=>{
+        const t = getVal(f.id);
+        fieldSnaps[f.id] = {answer:t};
+        if(t.length<5){ allOk=false; problems.push(`${f.label} 要多写一点。`); return; }
+        const r = scoreText(t, f.keyPoints, f.avoid);
+        const need = f.needHits || f.keyPoints.length;
+        reports.push(`<b>${f.label}</b>${kpHtml(r)}`);
+        fieldSnaps[f.id] = {answer:t, hit:r.hit.map(k=>k.label), miss:r.miss.map(k=>k.label), avoid:r.avoid, passed:(r.hit.length>=need)};
+        if(r.hit.length < need){
+          allOk=false;
+          problems.push(`${f.label} 要写齐 ${need} 点（目前 ${r.hit.length}）。`);
+        }
+      });
+
+      if(allOk){
+        feedback(true, `🔓 终极门打开！道理 + 例子 都到位！<br>${reports.join('')}`);
+        awardKey(ev, true);
+      }else{
+        feedback(false, `还差一点：<br>• ${problems.join('<br>• ')}${reports.length?'<br>'+reports.join(''):''}`);
+        addLife(-5); updHud();
+      }
+      saveAnswer(L.id, {type:'opinion', q:L.q, passed:allOk, fields:fieldSnaps});
+    };
+  }
+}
+
+function feedback(ok,msg){
+  const fb = document.getElementById('fb');
+  fb.className = 'fb show '+(ok?'ok':'no');
+  fb.innerHTML = msg;
+}
+function awardKey(ev, final){
+  if(state.stars[state.level]) return;
+  state.stars[state.level] = true;
+  state.star++;
+  const coins = LEVELS[state.level].points * 5;
+  addCoin(coins,ev);
+  addLife(+5);
+  updHud();
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('nextBtn').onclick = ()=>{
+    if(state.level<LEVELS.length-1){ state.level++; renderAll(); }
+    else{ showVictory(); }
+  };
+  renderNodes();
+  flashStreak('🔑 获得钥匙！');
+  if(final) setTimeout(showVictory,700);
+}
+
+/* ============ Victory ============ */
+function showVictory(){
+  document.getElementById('certCoin').textContent = state.coin;
+  document.getElementById('certLife').textContent = Math.max(0,state.life);
+  document.getElementById('certKeys').textContent = state.star;
+  document.getElementById('certRead').textContent = state.readDepth;
+  document.getElementById('certStars').textContent = '🔑'.repeat(state.star);
+  let rank='', medal='🥇', ending='';
+  if(state.readDepth>=20 && state.star===5){
+    rank='✨ 阳光结局 · 金牌体谅小能手 ✨';medal='🌞';
+    ending='你把厚厚的花束送到王阿姨手上，她笑了。阳光洒进走廊，沉默教室的门在你身后轻轻合上。你不只读懂了故事，也读懂了人心。';
+  }
+  else if(state.readDepth>=12){
+    rank='🌟 黄昏结局 · 银牌阅读达人 🌟';medal='🌇';
+    ending='王阿姨收下了花，微笑着说："你们能懂得体谅就好。"故事读懂了大半，再细一点会更好。';
+  }
+  else{
+    rank='💪 雨天结局 · 再读一次会更好';medal='🌧';
+    ending='天阴阴的，花有点少。王阿姨叹了口气："你们认真读课文了吗？"建议你再来一次，好好把课文读进心里。';
+  }
+  document.getElementById('medal').textContent = medal;
+  document.getElementById('certRank').textContent = rank;
+  document.getElementById('certEnding').textContent = ending;
+  document.getElementById('victory').classList.add('show');
+  updateRecord({
+    completed:true, rank, medal,
+    stars:state.star, coin:state.coin, life:Math.max(0,state.life),
+    readDepth:state.readDepth,
+    completedAt:new Date().toISOString()
+  });
+}
+
+/* ============ 小游戏 ============ */
+function renderMini(L){
+  if(L.subtype==='wordhunt') return renderWordHunt(L);
+  if(L.subtype==='sequence') return renderSequence(L);
+}
+
+function howtoHtml(L){
+  const steps = L.howto.map((s,i)=>`<div style="display:flex;gap:8px;align-items:flex-start;margin:3px 0"><span style="flex-shrink:0;background:var(--main);color:#fff;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800">${i+1}</span><div>${s}</div></div>`).join('');
+  return `<div class="miniRules">
+    <b>📖 怎么玩：</b>
+    ${steps}
+    <div style="margin-top:6px"><b>💰 得分：</b>${L.rewards}</div>
+    <div style="margin-top:2px"><b>⏱ 时间：</b>${L.time}</div>
+  </div>`;
+}
+
+function renderWordHunt(L){
+  document.getElementById('qbody').innerHTML = `
+    <div class="door">
+      <div class="dn">${L.doorNum}</div>
+      <div class="dt">${L.intro}</div>
+      <div class="lock">🚧</div>
+    </div>
+    <div class="qhead"><span class="qnum">🎮 小游戏</span></div>
+    <h2 style="margin:0 0 8px;color:var(--main-dark)">${L.title}</h2>
+    ${howtoHtml(L)}
+    <div class="miniHud">
+      <span>⏰ <b id="miT">${L.duration}</b> 秒</span>
+      <span>🌸 <b id="miC">0</b></span>
+      <span>📖 <b id="miR">0</b></span>
+    </div>
+    <div class="miniStage" id="miStage"></div>
+    <div class="miniResult" id="miRes"></div>
+    <div class="actions">
+      <button class="btn primary" id="startMini" style="font-size:17px;padding:12px 28px">▶ 开始</button>
+      <button class="btn primary" id="nextBtn" disabled>下一关 ▶</button>
+    </div>`;
+  document.getElementById('startMini').onclick = ()=>runWordHunt(L);
+}
+
+function runWordHunt(L){
+  const stage = document.getElementById('miStage');
+  const tEl = document.getElementById('miT');
+  const cEl = document.getElementById('miC');
+  const rEl = document.getElementById('miR');
+  let timeLeft = L.duration, coins = 0, readGain = 0, running = true, sp, tm;
+  const upd = ()=>{ tEl.textContent=timeLeft; cEl.textContent=coins; rEl.textContent='+'+readGain; };
+  upd();
+  stage.innerHTML = '';
+  document.getElementById('miRes').classList.remove('show');
+  document.getElementById('startMini').disabled = true;
+  document.getElementById('startMini').textContent = '进行中…';
+
+  const spawn = ()=>{
+    if(!running) return;
+    const useReal = Math.random()<0.55;
+    const list = useReal ? L.wordReal : L.wordFake;
+    const w = list[Math.floor(Math.random()*list.length)];
+    const b = document.createElement('div');
+    b.className = 'wordBubble';
+    b.textContent = w;
+    b.style.left = Math.random()*(stage.clientWidth-110)+'px';
+    b.style.top = Math.random()*(stage.clientHeight-60)+10+'px';
+    b.onclick = (ev)=>{
+      if(b.dataset.done) return;
+      b.dataset.done='1';
+      b.classList.add('clicked');
+      const fx = document.createElement('div');
+      fx.className='float';
+      if(useReal){
+        coins += 3; readGain += 2; addLife(+1);
+        fx.textContent='+3 🌸 +2 📖';
+        fx.style.color='#e55589';
+      } else {
+        coins -= 2; addLife(-3);
+        fx.textContent='-2 🌸「课文没这词」';
+        fx.style.color='#ef5b5b';
+        showToast(`⚠️ "${w}" 课文里没出现过`);
+      }
+      fx.style.left = ev.clientX+'px';
+      fx.style.top = ev.clientY+'px';
+      document.body.appendChild(fx);
+      setTimeout(()=>fx.remove(),1100);
+      upd();
+      setTimeout(()=>b.remove(),300);
+    };
+    stage.appendChild(b);
+    setTimeout(()=>{ if(b.parentNode) b.remove(); },3200);
+  };
+  sp = setInterval(spawn, L.spawnMs||700);
+  tm = setInterval(()=>{
+    timeLeft--; upd();
+    if(timeLeft<=0){
+      running = false; clearInterval(sp); clearInterval(tm);
+      stage.innerHTML = '';
+      state.coin += coins;
+      state.readDepth += readGain;
+      updHud();
+      const r = document.getElementById('miRes');
+      let msg;
+      if(coins>=30 && readGain>=15) msg='🏆 清扫大师！走廊一尘不染';
+      else if(coins>=15) msg='👍 不错，大部分词语都认得';
+      else if(coins>=0) msg='🙂 有点犹豫，别被陷阱词骗了';
+      else msg='😅 陷阱词点太多啦，再翻翻课文吧';
+      r.innerHTML = `🏁 ${msg}<br>🌸 本关 <b>${coins>=0?'+':''}${coins}</b> · 📖 <b>+${readGain}</b>`;
+      r.classList.add('show');
+      state.stars[state.level] = true;  // 不给钥匙，只解锁下一关
+      saveMinigame(L.title, {title:L.title, subtype:'wordhunt', coins, readGain, at:new Date().toISOString()});
+      updHud(); renderNodes();
+      document.getElementById('nextBtn').disabled = false;
+      document.getElementById('nextBtn').onclick = ()=>{
+        if(state.level<LEVELS.length-1){ state.level++; renderAll(); }
+        else { showVictory(); }
+      };
+    }
+  }, 1000);
+}
+
+function renderSequence(L){
+  document.getElementById('qbody').innerHTML = `
+    <div class="door">
+      <div class="dn">${L.doorNum}</div>
+      <div class="dt">${L.intro}</div>
+      <div class="lock">🔐</div>
+    </div>
+    <div class="qhead"><span class="qnum">🎮 小游戏</span></div>
+    <h2 style="margin:0 0 8px;color:var(--main-dark)">${L.title}</h2>
+    ${howtoHtml(L)}
+    <div class="miniHud">
+      <span>⏰ <b id="miT">${L.duration}</b> 秒</span>
+      <span>✅ 已排 <b id="miN">0</b>/7</span>
+      <span>📖 <b id="miR">0</b></span>
+    </div>
+    <div class="seqStage">
+      <div style="font-size:13px;opacity:.85;margin-bottom:6px">🔢 按顺序填入 7 个槽位：</div>
+      <div class="seqSlots" id="seqSlots"></div>
+      <div style="font-size:13px;opacity:.85;margin:12px 0 6px">🎲 下面是打乱的事件，点击你认为"下一个发生"的：</div>
+      <div class="eventList" id="evList"></div>
+    </div>
+    <div class="miniResult" id="miRes"></div>
+    <div class="actions">
+      <button class="btn primary" id="startMini" style="font-size:17px;padding:12px 28px">▶ 开始</button>
+      <button class="btn primary" id="nextBtn" disabled>走出教室 🚪</button>
+    </div>`;
+  document.getElementById('startMini').onclick = ()=>runSequence(L);
+}
+
+function runSequence(L){
+  const slots = document.getElementById('seqSlots');
+  const evList = document.getElementById('evList');
+  const tEl = document.getElementById('miT');
+  const nEl = document.getElementById('miN');
+  const rEl = document.getElementById('miR');
+  let timeLeft = L.duration, nextExpected = 1, readGain = 0, coins = 0, running = true, tm, wrongCount = 0;
+
+  slots.innerHTML = L.events.map((_,i)=>`<div class="slot ${i===0?'active':''}" id="slot-${i+1}">${i+1}</div>`).join('');
+  const shuffled = [...L.events].sort(()=>Math.random()-0.5);
+  evList.innerHTML = shuffled.map(e=>`<div class="evCard" data-o="${e.order}">${e.text}</div>`).join('');
+  document.getElementById('startMini').disabled = true;
+  document.getElementById('startMini').textContent = '进行中…';
+
+  const upd = ()=>{
+    tEl.textContent = timeLeft;
+    nEl.textContent = nextExpected-1;
+    rEl.textContent = '+'+readGain;
+  };
+  upd();
+
+  evList.querySelectorAll('.evCard').forEach(card=>{
+    card.onclick = (ev)=>{
+      if(!running) return;
+      if(card.classList.contains('used')) return;
+      const o = +card.dataset.o;
+      if(o===nextExpected){
+        card.classList.add('used');
+        const slot = document.getElementById('slot-'+o);
+        slot.textContent = card.textContent;
+        slot.classList.remove('active'); slot.classList.add('filled');
+        coins += 2; readGain += 2;
+        addLife(+1);
+        nextExpected++;
+        const ns = document.getElementById('slot-'+nextExpected);
+        if(ns) ns.classList.add('active');
+        upd();
+        const fx = document.createElement('div');
+        fx.className='float'; fx.textContent='✅ +2 📖';
+        fx.style.color='#3dd28a';
+        fx.style.left=ev.clientX+'px'; fx.style.top=ev.clientY+'px';
+        document.body.appendChild(fx);
+        setTimeout(()=>fx.remove(),1000);
+        if(nextExpected>L.events.length){
+          finishSeq(true);
+        }
+      } else {
+        card.classList.add('wrong');
+        setTimeout(()=>card.classList.remove('wrong'),400);
+        addLife(-3); updHud();
+        wrongCount++;
+        const fx = document.createElement('div');
+        fx.className='float'; fx.textContent='❌ 顺序错了';
+        fx.style.color='#ef5b5b';
+        fx.style.left=ev.clientX+'px'; fx.style.top=ev.clientY+'px';
+        document.body.appendChild(fx);
+        setTimeout(()=>fx.remove(),1000);
+        showToast('再想想：这件事在课文里是第几个发生的？');
+      }
+    };
+  });
+
+  tm = setInterval(()=>{
+    timeLeft--; upd();
+    if(timeLeft<=0) finishSeq(false);
+  },1000);
+
+  function finishSeq(success){
+    if(!running) return;
+    running = false;
+    clearInterval(tm);
+    state.coin += coins;
+    state.readDepth += readGain;
+    updHud();
+    const r = document.getElementById('miRes');
+    let msg;
+    if(success && wrongCount===0) msg='🏆 完美密码！你完全读懂了故事脉络';
+    else if(success) msg=`👍 成功解锁！有 ${wrongCount} 次错按，再读读就更清楚`;
+    else msg=`⏰ 时间到，排对了 ${nextExpected-1}/7。回去重读再来一次？`;
+    r.innerHTML = `🏁 ${msg}<br>🌸 <b>+${coins}</b> · 📖 <b>+${readGain}</b>`;
+    r.classList.add('show');
+    state.stars[state.level] = true;  // 不给钥匙
+    saveMinigame(L.title, {title:L.title, subtype:'sequence', success, wrongCount, correctCount:nextExpected-1, coins, readGain, at:new Date().toISOString()});
+    renderNodes();
+    document.getElementById('nextBtn').disabled = false;
+    document.getElementById('nextBtn').onclick = ()=>{
+      if(state.level<LEVELS.length-1){ state.level++; renderAll(); }
+      else { showVictory(); }
+    };
+  }
+}
+
+/* ============ 横幅 ============ */
+function flashStreak(msg){
+  const s = document.createElement('div');
+  s.className='streak'; s.textContent=msg;
+  document.body.appendChild(s);
+  setTimeout(()=>s.remove(),1300);
+}
+
+/* ============ Firestore ============ */
+const COLLECTION = 'reading3_records';
+state.record = {
+  authUid:'', name:'', tool:'reading3',
+  answers:{}, minigames:{},
+  stars:0, coin:0, life:100, readDepth:0,
+  completed:false, rank:'', medal:'',
+};
+state.recRef = null;
+
+function snapshot(){
+  return {
+    name: state.record.name,
+    answers: state.record.answers,
+    minigames: state.record.minigames,
+    stars: state.star, coin: state.coin, life: Math.max(0,state.life),
+    readDepth: state.readDepth,
+    completed: state.record.completed,
+    rank: state.record.rank, medal: state.record.medal,
+    completedAt: state.record.completedAt || null,
+    updatedAt: serverTimestamp()
+  };
+}
+async function persist(extra){
+  if(!state.recRef) return;
+  try{
+    await updateDoc(state.recRef, {...snapshot(), ...(extra||{})});
+  }catch(e){ console.warn('Firestore 保存失败', e); }
+}
+async function initRecord(name){
+  try{
+    const user = await ensureAuth();
+    state.record.authUid = user.uid;
+    state.record.name = name;
+    const payload = {
+      authUid:user.uid, name, tool:'reading3',
+      answers:{}, minigames:{},
+      stars:0, coin:0, life:100, readDepth:0,
+      completed:false, rank:'', medal:'',
+      startedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    const ref = await addDoc(col(COLLECTION), payload);
+    state.recRef = ref;
+  }catch(e){
+    console.error('Firestore 初始化失败', e);
+    alert('⚠️ 无法连接到云端，你的作答可能不会被老师看到。\n请检查网络后重试。\n\n'+(e.message||e));
+  }
+}
+function updateRecord(patch){
+  Object.assign(state.record, patch);
+  persist();
+}
+function saveAnswer(qid, data){
+  const prev = state.record.answers[qid] || {attempts:0, history:[]};
+  prev.attempts = (prev.attempts||0)+1;
+  prev.latest = data;
+  prev.history = (prev.history||[]).concat([{at:new Date().toISOString(),...data}]).slice(-5);
+  state.record.answers[qid] = prev;
+  persist();
+}
+function saveMinigame(qid, data){
+  state.record.minigames[qid] = data;
+  persist();
+}
+
+/* ============ gate ============ */
+async function startGame(){
+  const inp = document.getElementById('playerName');
+  const name = (inp.value||'').trim();
+  if(name.length<1){ inp.focus(); inp.style.borderColor='#ef5b5b'; return; }
+  const startBtn = document.getElementById('gateStart');
+  startBtn.disabled = true; startBtn.textContent = '进入教室中…';
+  await initRecord(name);
+  document.getElementById('gate').classList.add('hide');
+  renderAll();
+}
+document.getElementById('gateStart').onclick = startGame;
+document.getElementById('playerName').addEventListener('keydown', e=>{
+  if(e.key==='Enter') startGame();
+});
+document.getElementById('playerName').focus();
+
+/* ============ 启动 ============ */
+function renderAll(){ renderNodes(); renderQ(); updHud(); }
+</script>
+</body>
+</html>
