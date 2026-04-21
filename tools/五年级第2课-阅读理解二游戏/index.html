@@ -17,7 +17,7 @@ html,body{margin:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-se
 body{padding:16px 12px 40px}
 
 /* ============ HUD ============ */
-.hud{max-width:980px;margin:0 auto 14px;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 16px;display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:10px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.hud{max-width:980px;margin:0 auto 14px;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 16px;display:grid;grid-template-columns:auto 1fr auto auto auto;gap:12px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 @media (max-width:720px){.hud{grid-template-columns:auto 1fr;row-gap:6px}}
 .mascot{font-size:30px;animation:wave 2s ease-in-out infinite}
 @keyframes wave{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
@@ -169,6 +169,20 @@ textarea:focus,input.ti:focus{outline:0;border-color:var(--main)}
   100%{transform:translateX(calc(100vw + 60px)) translateY(-40px) rotate(360deg);opacity:0}
 }
 
+/* ============ 姓名闯关 gate ============ */
+.gate{position:fixed;inset:0;background:linear-gradient(160deg,#1b2360,#2a2a6e 60%,#4b2e83);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.gate.hide{display:none}
+.gateCard{background:#fff;border-radius:18px;padding:30px 26px;max-width:440px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:pop .45s ease}
+.gateCard h1{margin:6px 0 4px;color:var(--main-dark);font-size:24px;line-height:1.3}
+.gateCard .sub{color:#666;font-size:14px;margin:0 0 18px}
+.gateCard label{display:block;text-align:left;font-weight:700;color:#444;font-size:14px;margin:8px 0 6px}
+.gateCard input{width:100%;border:2px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px;font-family:inherit;margin-bottom:14px}
+.gateCard input:focus{outline:0;border-color:var(--main)}
+.gateCard .btn{width:100%;font-size:17px;padding:12px}
+.gateCard .foot{color:#888;font-size:12.5px;margin:14px 0 4px;line-height:1.5}
+.teacherLink{display:inline-block;margin-top:6px;color:var(--main);font-size:13px;text-decoration:none;font-weight:700}
+.teacherLink:hover{text-decoration:underline}
+
 /* streak banner */
 .streak{position:fixed;top:30%;left:50%;transform:translateX(-50%);font-size:44px;font-weight:900;color:#ffb84d;text-shadow:0 4px 14px rgba(0,0,0,.6),0 0 20px #ffb84d;pointer-events:none;z-index:80;animation:streakpop 1.3s ease forwards;white-space:nowrap}
 @keyframes streakpop{
@@ -181,15 +195,28 @@ textarea:focus,input.ti:focus{outline:0;border-color:var(--main)}
 </head>
 <body>
 
+<!-- 姓名闯关 -->
+<div class="gate" id="gate">
+  <div class="gateCard">
+    <div style="font-size:54px;margin-bottom:4px">👁️📖</div>
+    <h1>《模糊的世界》<br>阅读理解闯关</h1>
+    <p class="sub">五年级高华 第2课 · 共 7 关（5 题 + 2 个小游戏）</p>
+    <label>请输入你的姓名（或座号 + 班级）：</label>
+    <input id="playerName" type="text" placeholder="例如：5E 12 李明" maxlength="30"/>
+    <button class="btn primary" id="gateStart">▶ 开始游戏</button>
+    <p class="foot">你的作答会自动保存，老师能在后台查看你的进度与答案。</p>
+    <a href="teacher.html" class="teacherLink" target="_blank">👨‍🏫 老师后台</a>
+  </div>
+</div>
+
 <!-- HUD -->
 <div class="hud">
   <div class="mascot" title="小眼睛陪你闯关！">👁️</div>
   <div class="title">《模糊的世界》阅读理解闯关
     <small>五年级高华 第2课 · 每关都有 📍定位 💡提示 👀答案 支架</small>
   </div>
-  <button class="hudbox miniBtn" id="miniBtn" title="玩一局护眼小游戏">🎮 小游戏</button>
   <div class="hudbox gold">🪙 <span id="coin">0</span></div>
-  <div class="hudbox star">⭐ <span id="star">0</span>/9</div>
+  <div class="hudbox star">⭐ <span id="star">0</span>/7</div>
   <div class="hudbox">
     <span style="font-size:13px">视力</span>
     <div class="lifebar"><div class="lifefill" id="lifefill"></div><div class="lifelbl" id="lifelbl">100</div></div>
@@ -225,7 +252,11 @@ textarea:focus,input.ti:focus{outline:0;border-color:var(--main)}
   </div>
 </div>
 
-<script>
+<script type="module">
+import {
+  ensureAuth, col, doc, addDoc, updateDoc, serverTimestamp
+} from '../_shared/firebase.js';
+
 /* ============ 难词拼音词典 ============ */
 const DICT = {
   '模糊':['mó hu','看不清楚'],
@@ -341,31 +372,13 @@ const LEVELS = [
     answer:'常客',
     hint:'看第②段最后一句——"成了组屋楼下那家诊所的……"后面是哪个词？'
   },
-  { id:'2', points:2, para:'p7',
-    type:'exact',
-    q:'文中表示"把东西用力扔出去"的词语是：',
-    placeholder:'请填写文中的词语……',
-    answer:'抛',
-    hint:'看第⑦段——"把手机___进抽屉"，是哪一个动作？'
-  },
   { id:'🎮', points:0, type:'minigame', subtype:'blink',
     title:'🌿 眼保健操休息时间',
     desc:'做了两道题，眨眨眼放松一下～<br>15 秒内尽量点击出现的 👁️，每点一次 <b>+3 🪙</b> 金币 · 视力 <b>+1</b>。',
     duration:15, spawnMs:500,
     pool:[{e:'👁️',coin:3,life:1,good:true}]
   },
-  { id:'3', points:3, para:'p2',
-    type:'input', rows:5,
-    q:'自从迷上手机游戏后，志强的身体和生活出现了什么变化？（请写出三个变化）',
-    placeholder:'请按顺序写出三个方面的变化……',
-    hint:'从①②段找线索：晚上怎么做？上课和功课怎样？眼睛和身体怎样？',
-    keyPoints:[
-      {label:'① 玩到三更半夜 / 熬夜玩游戏', any:['三更半夜','半夜','深夜','熬夜','到很晚','很晚','整晚']},
-      {label:'② 无精打采 / 功课越做越差', any:['无精打采','没精神','打哈欠','功课','成绩','作业']},
-      {label:'③ 看字模糊、头疼咳嗽、成了诊所常客', any:['模糊','看不清','头疼','咳嗽','诊所','常客','生病']},
-    ]
-  },
-  { id:'4', points:4, para:'p4',
+  { id:'2', points:4, para:'p4',
     type:'twoInput',
     q:'佳佳冲向马路对面的一刻，志强有什么反应？他为什么会有这样的反应？',
     hint:'看第④⑤段：志强的动作和神态（2分）；再想一想：他为什么会看不清路况？他刚刚差点失去妹妹，会有什么感受？（2分）',
@@ -373,14 +386,14 @@ const LEVELS = [
       keyPoints:[
         {label:'猛地抬头 / 发抖 / 掉手机 等具体动作', any:['抬头','发抖','抖','掉']},
         {label:'愣住 / 说不出话', any:['愣','呆','说不出']},
-      ]},
+      ], avoid:['陈医生','抛','抽屉','稳定','公园','跑步','复查']},
     part2:{ label:'② 原因（2分）：', rows:3, placeholder:'请说明为什么他会有这样的反应……',
       keyPoints:[
         {label:'视力已下降，看不清路况', any:['视力','看不清','模糊','眼睛']},
         {label:'惊慌 / 害怕 / 自责', any:['惊慌','害怕','吓','自责','紧张']},
-      ]}
+      ], avoid:['陈医生','抛','抽屉','稳定','公园','跑步','复查']}
   },
-  { id:'5', points:4, para:'p5',
+  { id:'3', points:4, para:'p5',
     type:'twoInput',
     q:'回家的路上，妈妈"紧紧地握着"志强的手——妈妈这样做表示什么？那只手"冰凉冰凉的"，又说明了什么？',
     hint:'妈妈一路"一句话也没说"，她不是在责骂，用的是什么方式？（2分）人在极度害怕时身体会怎样？妈妈刚刚经历了什么惊吓？（2分）',
@@ -388,12 +401,12 @@ const LEVELS = [
       keyPoints:[
         {label:'妈妈没有开口责骂 / 用动作代替说话', any:['没有骂','没责骂','没开口','没说','无声','不责骂','没骂','用动作']},
         {label:'让志强记住这次教训 / 担心', any:['教训','记住','提醒','担心']},
-      ]},
+      ], avoid:['陈医生','抛','抽屉','稳定','跑步','复查','二十分钟']},
     part2:{ label:'② "冰凉冰凉的" 说明什么（2分）：', rows:3, placeholder:'请说明为什么妈妈的手是冰凉的……',
       keyPoints:[
         {label:'妈妈非常害怕 / 受到极大惊吓', any:['害怕','惊','吓','惊吓']},
         {label:'差点失去佳佳，还没恢复过来', any:['佳佳','妹妹','失去','没恢复','没有恢复','还没']},
-      ]}
+      ], avoid:['陈医生','抛','抽屉','稳定','跑步','复查','二十分钟']}
   },
   { id:'🎮', points:0, type:'minigame', subtype:'trap',
     title:'🏠 收拾房间大作战',
@@ -407,7 +420,7 @@ const LEVELS = [
       {e:'💻',coin:-5,life:-5,good:false},
     ]
   },
-  { id:'6', points:4, para:'p7',
+  { id:'4', points:4, para:'p7',
     type:'input', rows:5,
     q:'那天晚上，志强走到客厅把手机抛进抽屉，为什么他心里感到一阵痛苦？',
     placeholder:'请联系短文内容完整说明……',
@@ -417,9 +430,10 @@ const LEVELS = [
       {label:'想起妈妈冰凉的手', any:['妈妈','冰凉','冰','凉']},
       {label:'意识到自己沉迷手机 / 坏习惯伤害了眼睛 / 让家人担心', any:['沉迷','手机','坏习惯','伤害','眼睛','担心','视力']},
       {label:'因此感到自责 / 痛苦', any:['自责','后悔','难过','痛苦','内疚']},
-    ]
+    ],
+    avoid:['公园','跑步','稳定','陈医生','复查','二十分钟','笑了']
   },
-  { id:'7', points:4, para:'p8',
+  { id:'5', points:4, para:'p8',
     type:'opinion',
     q:'志强把手机锁进抽屉，规定自己每天只玩二十分钟电脑。你赞成他的做法吗？请结合短文说明理由。在生活中，如果你也对某样东西上瘾（例如电视、手机、漫画），你会怎么做？',
     hint:'• 先写清楚立场（"赞成"或"不赞成"）。\n• 理由要结合志强的视力、健康或妹妹的事情。\n• 生活迁移要包含三层：触发场景 → 具体行动 → 结果。',
@@ -437,7 +451,8 @@ const LEVELS = [
           {label:'触发场景：什么时候/什么情况会上瘾', any:['时候','一有空','放学','回家','无聊','想看','想玩','经常','空']},
           {label:'具体行动：你打算怎么做（交给家人 / 限制 / 锁 / 规定）', any:['交给','保管','限制','锁','规定','只','不超过','控制']},
           {label:'结果：带来什么好处（学习 / 健康 / 视力 / 睡眠）', any:['学习','专心','健康','视力','睡眠','不熬夜','进步']},
-        ]},
+        ],
+        avoid:['志强','佳佳','陈医生','组屋','巴刹']},
     ]
   }
 ];
@@ -477,18 +492,16 @@ function inputEl(id, rows, placeholder){
 
 function renderQ(){
   const L = LEVELS[state.level];
-  let html = `<div class="qhead">
-    <span class="qnum">${L.id}</span>
-    <span class="points">${L.points}分</span>
-  </div>
-  <div class="qtext">${L.q}</div>
-  ${toolBar(L)}`;
 
   if(L.type==='minigame'){
     document.getElementById('qbody').innerHTML = `
       <div class="qhead"><span class="qnum">🎮 休闲关</span></div>
-      <h2 style="margin:0 0 6px;color:var(--main-dark)">${L.title}</h2>
-      <div style="font-size:14px;color:#555;margin-bottom:10px;line-height:1.7">${L.desc}</div>
+      <h2 style="margin:0 0 8px;color:var(--main-dark)">${L.title}</h2>
+      <div style="background:#fffbe8;border-left:4px solid var(--accent);padding:10px 14px;border-radius:8px;font-size:14.5px;line-height:1.9;margin-bottom:12px">
+        <b>🕹️ 游戏说明：</b><br>${L.desc}<br>
+        <b>⏱️ 时长：</b>${L.duration} 秒　·　<b>🎯 目标：</b>尽量多拿 🪙 金币和 👁️ 视力回血<br>
+        准备好了吗？点下面的 <b>▶ 开始游戏</b> 按钮！
+      </div>
       <div class="miniHud">
         <span>⏰ <b id="miT">${L.duration}</b> 秒</span>
         <span>🪙 本关 <b id="miC">0</b></span>
@@ -497,12 +510,20 @@ function renderQ(){
       <div class="miniStage" id="miStage"></div>
       <div class="miniResult" id="miR"></div>
       <div class="actions">
-        <button class="btn ghost" id="startMini">开始挑战</button>
+        <button class="btn primary" id="startMini" style="font-size:17px;padding:12px 28px">▶ 开始游戏</button>
         <button class="btn primary" id="nextBtn" disabled>下一关 ▶</button>
       </div>`;
     document.getElementById('startMini').onclick = ()=>runInlineMini(L);
     return;
   }
+
+  let html = `<div class="qhead">
+    <span class="qnum">${L.id}</span>
+    <span class="points">${L.points}分</span>
+  </div>
+  <div class="qtext">${L.q}</div>
+  ${toolBar(L)}`;
+
   if(L.type==='exact'){
     html += inputEl('ans', 1, L.placeholder);
   }
@@ -530,19 +551,25 @@ function renderQ(){
 }
 
 /* ============ 关键词评分 ============ */
-function scoreText(text, keyPoints){
+function scoreText(text, keyPoints, avoid){
   const t = (text||'').trim();
   const hit=[], miss=[];
   keyPoints.forEach(kp=>{
     const got = kp.any.some(k=>t.includes(k));
     (got?hit:miss).push(kp);
   });
-  return {hit, miss, ok:miss.length===0};
+  const foundAvoid = (avoid||[]).filter(a=>t.includes(a));
+  return {hit, miss, avoid:foundAvoid, ok:miss.length===0 && foundAvoid.length===0};
 }
 function kpHtml(r){
-  const h = r.hit.map(k=>`<li class="hit">✓ ${k.label}</li>`).join('');
-  const m = r.miss.map(k=>`<li class="miss">✗ ${k.label}</li>`).join('');
-  return `<ul class="kplist">${h}${m}</ul>`;
+  const kw = k => k.any.slice(0,3).join('、');
+  const h = r.hit.map(k=>`<li class="hit">✓ ${k.label}　<span style="color:#666;font-weight:400;font-size:13px">关键词：${kw(k)}</span></li>`).join('');
+  const m = r.miss.map(k=>`<li class="miss">✗ ${k.label}　<span style="color:#666;font-weight:400;font-size:13px">关键词：${kw(k)}</span></li>`).join('');
+  let a = '';
+  if(r.avoid && r.avoid.length){
+    a = `<li class="miss">⚠️ <b>无关信息扣分</b>：「${r.avoid.join('」「')}」这些跟本题无关，请删掉再提交。</li>`;
+  }
+  return `<ul class="kplist">${h}${m}${a}</ul>`;
 }
 function getVal(id){ return (document.getElementById(id).value||'').trim(); }
 
@@ -554,35 +581,42 @@ function bindHandlers(L){
     btn.onclick = (ev)=>{
       const t = getVal('ans');
       if(!t){ feedback(false,'请先写出你的答案～'); return; }
-      if(t.includes(L.answer)){
+      const ok = t.includes(L.answer);
+      if(ok){
         feedback(true, `正确！文中的词是「${L.answer}」。`);
         awardStar(ev);
       }else{
         feedback(false, `还不对哦，再读读原文找找看，只写一个词语即可。`);
         addLife(-5); updHud();
       }
+      saveAnswer(L.id, {type:'exact', q:L.q, answer:t, expected:L.answer, passed:ok});
     };
   }
   else if(L.type==='input'){
     btn.onclick = (ev)=>{
       const t = getVal('ans');
       if(t.length<5){ feedback(false,'请写出你的完整答案（至少一句话）。'); return; }
-      const r = scoreText(t, L.keyPoints);
+      const r = scoreText(t, L.keyPoints, L.avoid);
       if(r.ok){
-        feedback(true, `答题要点齐全！🎉${kpHtml(r)}`);
+        feedback(true, `答题要点齐全，没有无关信息！🎉${kpHtml(r)}`);
         awardStar(ev, state.level===LEVELS.length-1);
       }else{
-        feedback(false, `你答对了 ${r.hit.length} / ${L.keyPoints.length} 个要点，还缺 ${r.miss.length} 点：${kpHtml(r)}`);
+        const av = r.avoid.length?`，有 ${r.avoid.length} 处无关信息`:'';
+        feedback(false, `你答对 ${r.hit.length} / ${L.keyPoints.length} 个要点，缺 ${r.miss.length} 点${av}：${kpHtml(r)}`);
         addLife(-5); updHud();
       }
+      saveAnswer(L.id, {
+        type:'input', q:L.q, answer:t, passed:r.ok,
+        hit:r.hit.map(k=>k.label), miss:r.miss.map(k=>k.label), avoid:r.avoid
+      });
     };
   }
   else if(L.type==='twoInput'){
     btn.onclick = (ev)=>{
       const t1 = getVal('ans1'), t2 = getVal('ans2');
       if(t1.length<3 || t2.length<3){ feedback(false,'两部分都要写答案哦～'); return; }
-      const r1 = scoreText(t1, L.part1.keyPoints);
-      const r2 = scoreText(t2, L.part2.keyPoints);
+      const r1 = scoreText(t1, L.part1.keyPoints, L.part1.avoid);
+      const r2 = scoreText(t2, L.part2.keyPoints, L.part2.avoid);
       const total = L.part1.keyPoints.length + L.part2.keyPoints.length;
       const got = r1.hit.length + r2.hit.length;
       if(r1.ok && r2.ok){
@@ -592,24 +626,34 @@ function bindHandlers(L){
         feedback(false, `答对 ${got} / ${total} 个要点：<br><b>① </b>${kpHtml(r1)}<b>② </b>${kpHtml(r2)}`);
         addLife(-5); updHud();
       }
+      saveAnswer(L.id, {
+        type:'twoInput', q:L.q, passed:(r1.ok && r2.ok),
+        part1:{answer:t1, hit:r1.hit.map(k=>k.label), miss:r1.miss.map(k=>k.label), avoid:r1.avoid},
+        part2:{answer:t2, hit:r2.hit.map(k=>k.label), miss:r2.miss.map(k=>k.label), avoid:r2.avoid}
+      });
     };
   }
   else if(L.type==='opinion'){
     btn.onclick = (ev)=>{
       const problems=[], reports=[];
       let allOk = true;
+      const fieldSnaps = {};
 
       L.fields.forEach(f=>{
         const t = getVal(f.id);
         if(f.must){
+          fieldSnaps[f.id] = {answer:t};
           if(!t){ allOk=false; problems.push(`${f.label} 还没填。`); return; }
           const ok = f.must.some(m=>t.includes(m));
+          fieldSnaps[f.id].passed = ok;
           if(!ok){ allOk=false; problems.push(`${f.label} 请明确写"赞成"或"不赞成"。`); }
         } else if(f.keyPoints){
+          fieldSnaps[f.id] = {answer:t};
           if(t.length<5){ allOk=false; problems.push(`${f.label} 还需要多写一点（至少一句话）。`); return; }
-          const r = scoreText(t, f.keyPoints);
+          const r = scoreText(t, f.keyPoints, f.avoid);
           const need = f.needHits || f.keyPoints.length;
           reports.push(`<b>${f.label}</b>${kpHtml(r)}`);
+          fieldSnaps[f.id] = {answer:t, hit:r.hit.map(k=>k.label), miss:r.miss.map(k=>k.label), avoid:r.avoid, passed:(r.hit.length>=need)};
           if(r.hit.length < need){
             allOk=false;
             problems.push(`${f.label} 至少要命中 ${need} 个要点（目前 ${r.hit.length}）。`);
@@ -624,6 +668,7 @@ function bindHandlers(L){
         feedback(false, `还差一点：<br>• ${problems.join('<br>• ')}${reports.length?'<br>'+reports.join(''):''}`);
         addLife(-5); updHud();
       }
+      saveAnswer(L.id, {type:'opinion', q:L.q, passed:allOk, fields:fieldSnaps});
     };
   }
 }
@@ -662,11 +707,14 @@ function showVictory(){
   document.getElementById('medal').textContent = medal;
   document.getElementById('certRank').textContent = rank;
   document.getElementById('victory').classList.add('show');
+  updateRecord({
+    completed:true, rank, medal,
+    stars:state.star, coin:state.coin, life:Math.max(0,state.life),
+    completedAt:new Date().toISOString()
+  });
 }
 
-/* ============ 护眼小游戏 ============ */
-document.getElementById('miniBtn').onclick = openMini;
-
+/* ============ 备用：独立小游戏弹窗（当前版本未启用入口） ============ */
 function openMini(){
   const overlay = document.createElement('div');
   overlay.className='miniOverlay';
@@ -817,6 +865,7 @@ function runInlineMini(L){
         state.stars[state.level] = true;
         state.star++;
       }
+      saveMinigame(L.title||('mini-'+state.level), {title:L.title, coins, lifeGain, at:new Date().toISOString()});
       updHud(); renderNodes();
       document.getElementById('nextBtn').disabled = false;
       document.getElementById('nextBtn').onclick = ()=>{
@@ -846,9 +895,102 @@ awardStar = function(ev, final){
   }
 };
 
+/* ============ Firestore 记录（保存到 my-teaching-tools-ab8b0） ============ */
+const COLLECTION = 'reading2_records';
+state.record = {
+  authUid: '', name: '',
+  tool: 'reading2',
+  startedAt: null, updatedAt: null,
+  answers: {}, minigames: {},
+  stars: 0, coin: 0, life: 100,
+  completed: false, rank: '', medal: ''
+};
+state.recRef = null;
+state.saving = 0;
+
+function snapshot(){
+  // 只写可变字段，避免每次保存时覆盖 startedAt
+  return {
+    name: state.record.name,
+    answers: state.record.answers,
+    minigames: state.record.minigames,
+    stars: state.star, coin: state.coin, life: Math.max(0,state.life),
+    completed: state.record.completed,
+    rank: state.record.rank, medal: state.record.medal,
+    completedAt: state.record.completedAt || null,
+    updatedAt: serverTimestamp()
+  };
+}
+async function persist(extra){
+  if(!state.recRef) return;
+  state.saving++;
+  try{
+    await updateDoc(state.recRef, {...snapshot(), ...(extra||{})});
+  }catch(e){ console.warn('Firestore 保存失败', e); }
+  finally{ state.saving--; }
+}
+async function initRecord(name){
+  try{
+    const user = await ensureAuth();
+    state.record.authUid = user.uid;
+    state.record.name = name;
+    const payload = {
+      authUid: user.uid,
+      name,
+      tool: 'reading2',
+      answers: {}, minigames: {},
+      stars: 0, coin: 0, life: 100,
+      completed: false, rank: '', medal: '',
+      startedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    const ref = await addDoc(col(COLLECTION), payload);
+    state.recRef = ref;
+  }catch(e){
+    console.error('Firestore 初始化失败，继续本地游戏', e);
+    alert('⚠️ 无法连接到云端，你的作答可能不会被老师看到。请检查网络后重试。\n\n'+(e.message||e));
+  }
+}
+function updateRecord(patch){
+  Object.assign(state.record, patch);
+  persist();
+}
+function saveAnswer(qid, data){
+  const prev = state.record.answers[qid] || {attempts:0, history:[]};
+  prev.attempts = (prev.attempts||0)+1;
+  prev.latest = data;
+  prev.history = (prev.history||[]).concat([{at:new Date().toISOString(), ...data}]).slice(-5);
+  state.record.answers[qid] = prev;
+  persist();
+}
+function saveMinigame(qid, data){
+  state.record.minigames[qid] = data;
+  persist();
+}
+
+/* ============ 姓名 gate ============ */
+async function startGame(){
+  const inp = document.getElementById('playerName');
+  const name = (inp.value||'').trim();
+  if(name.length<1){ inp.focus(); inp.style.borderColor='#ef5b5b'; return; }
+  const startBtn = document.getElementById('gateStart');
+  startBtn.disabled = true; startBtn.textContent = '连接云端中…';
+  await initRecord(name);
+  document.getElementById('gate').classList.add('hide');
+  renderAll();
+}
+document.getElementById('gateStart').onclick = startGame;
+document.getElementById('playerName').addEventListener('keydown', e=>{
+  if(e.key==='Enter') startGame();
+});
+document.getElementById('playerName').focus();
+
+/* HTML onclick 调用的函数要暴露给 window */
+window.highlightPara = highlightPara;
+
 /* ============ 启动 ============ */
 function renderAll(){ renderNodes(); renderQ(); updHud(); }
-renderAll();
+// 不立即 renderAll，等姓名输入
 </script>
 </body>
 </html>

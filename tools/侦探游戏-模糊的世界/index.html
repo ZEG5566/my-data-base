@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>案件档案：模糊的世界 · 阅读侦探游戏</title>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=ZCOOL+XiaoWei&family=Noto+Serif+SC:wght@400;600;700;900&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f2e8d5;
+    --paper-dark: #d9c9a8;
+    --ink: #1f1b14;
+    --ink-soft: #3a3226;
+    --red-stamp: #a02020;
+    --red-warn: #c8352e;
+    --gold: #c08828;
+    --teal: #2d6b64;
+    --success: #4a7c3a;
+    --danger: #a02020;
+    --shadow: rgba(31, 27, 20, 0.3);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Serif SC', serif;
+    background: var(--paper);
+    background-image:
+      radial-gradient(ellipse at 10% 5%, rgba(160, 32, 32, 0.04) 0%, transparent 40%),
+      radial-gradient(ellipse at 90% 95%, rgba(45, 107, 100, 0.04) 0%, transparent 40%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.12 0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0.15 0'/></filter><rect width='120' height='120' filter='url(%23n)'/></svg>");
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.7;
+  }
+
+  .app {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* ============ HEADER / CASE FILE ============ */
+  .file-header {
+    position: relative;
+    padding: 28px 32px 24px;
+    margin-bottom: 24px;
+    background: linear-gradient(135deg, #f7eedb 0%, #ead9b5 100%);
+    border: 2px solid var(--ink);
+    box-shadow: 6px 6px 0 var(--ink), 6px 6px 0 1px var(--ink);
+    overflow: hidden;
+  }
+  .file-header::before {
+    content: "机密 · CONFIDENTIAL";
+    position: absolute;
+    top: 14px; right: -40px;
+    background: var(--red-stamp);
+    color: #f7eedb;
+    font-family: 'Special Elite', monospace;
+    font-size: 12px;
+    padding: 4px 50px;
+    transform: rotate(35deg);
+    letter-spacing: 2px;
+    box-shadow: 0 2px 4px var(--shadow);
+  }
+  .case-label {
+    font-family: 'Special Elite', monospace;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .case-title {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 42px;
+    color: var(--ink);
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+  .case-subtitle {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 17px;
+    color: var(--ink-soft);
+  }
+
+  /* ============ HUD ============ */
+  .hud {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .hud-card {
+    background: #fcf5e3;
+    border: 2px solid var(--ink);
+    padding: 12px 16px;
+    text-align: center;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .hud-label {
+    font-family: 'Special Elite', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+  }
+  .hud-value {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 28px;
+    color: var(--red-stamp);
+    line-height: 1;
+    margin-top: 4px;
+  }
+  .hud-bar {
+    height: 6px;
+    background: rgba(31,27,20,0.15);
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .hud-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--red-stamp));
+    transition: width 0.5s ease;
+  }
+
+  /* ============ INTRO SCREEN ============ */
+  .intro-card {
+    background: #fcf5e3;
+    border: 2px solid var(--ink);
+    padding: 32px 36px;
+    margin-bottom: 24px;
+    box-shadow: 5px 5px 0 var(--ink);
+    position: relative;
+  }
+  .intro-card h2 {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 32px;
+    margin-bottom: 16px;
+    color: var(--red-stamp);
+  }
+  .intro-card p {
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: var(--ink-soft);
+  }
+  .briefing {
+    border-left: 4px solid var(--red-stamp);
+    padding: 12px 18px;
+    background: rgba(160, 32, 32, 0.06);
+    margin: 16px 0;
+    font-family: 'Special Elite', monospace;
+    font-size: 14px;
+    line-height: 1.8;
+  }
+
+  /* ============ STORY / EVIDENCE PANEL ============ */
+  .story-panel {
+    background: #fdf6e3;
+    border: 2px solid var(--ink);
+    padding: 28px 36px 24px;
+    margin-bottom: 20px;
+    box-shadow: 4px 4px 0 var(--ink);
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  .story-panel::after {
+    content: "证据 · EVIDENCE";
+    position: absolute;
+    top: 10px; right: 14px;
+    font-family: 'Special Elite', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--red-stamp);
+    border: 1px solid var(--red-stamp);
+    padding: 2px 6px;
+  }
+  .story-title {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 32px;
+    color: var(--ink);
+    text-align: center;
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--ink-soft);
+  }
+  .story-body p {
+    text-indent: 2em;
+    margin-bottom: 12px;
+    font-size: 15.5px;
+    line-height: 2;
+    color: var(--ink);
+  }
+  .story-body .highlight-evidence {
+    background: linear-gradient(transparent 55%, #f4d772 55%, #f4d772 88%, transparent 88%);
+    padding: 0 2px;
+    animation: highlightFlash 1s ease;
+    font-weight: 600;
+  }
+  @keyframes highlightFlash {
+    0% { background: linear-gradient(transparent 55%, #f87070 55%, #f87070 88%, transparent 88%); }
+    100% { background: linear-gradient(transparent 55%, #f4d772 55%, #f4d772 88%, transparent 88%); }
+  }
+  .story-body .clue-word {
+    color: var(--red-stamp);
+    font-weight: 700;
+    border-bottom: 2px dotted var(--red-stamp);
+  }
+
+  .toggle-evidence {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 10px 18px;
+    font-family: 'Special Elite', monospace;
+    font-size: 13px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    margin-bottom: 16px;
+    box-shadow: 3px 3px 0 var(--red-stamp);
+    transition: all 0.15s;
+  }
+  .toggle-evidence:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--red-stamp);
+  }
+
+  /* ============ CASE / QUESTION PANEL ============ */
+  .case-panel {
+    background: #fcf5e3;
+    border: 2px solid var(--ink);
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    box-shadow: 5px 5px 0 var(--ink);
+    position: relative;
+  }
+  .case-badge {
+    display: inline-block;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Special Elite', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 4px 12px;
+    margin-bottom: 12px;
+  }
+  .case-heading {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 28px;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .case-meta {
+    font-family: 'Special Elite', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: 1px;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--ink-soft);
+  }
+  .question-stem {
+    font-size: 16.5px;
+    line-height: 1.9;
+    color: var(--ink);
+    margin-bottom: 20px;
+    padding: 14px 18px;
+    background: rgba(192, 136, 40, 0.08);
+    border-left: 4px solid var(--gold);
+  }
+  .question-stem .marks {
+    color: var(--red-stamp);
+    font-weight: 700;
+    margin-left: 6px;
+  }
+
+  /* ============ STEP / SCAFFOLD ============ */
+  .step {
+    margin-bottom: 18px;
+    padding: 16px 18px;
+    background: #fff9e8;
+    border: 1.5px dashed var(--ink-soft);
+    border-radius: 2px;
+    opacity: 0.45;
+    pointer-events: none;
+    transition: all 0.4s ease;
+  }
+  .step.active {
+    opacity: 1;
+    pointer-events: auto;
+    border: 1.5px solid var(--teal);
+    background: #fff9e8;
+    box-shadow: inset 0 0 0 3px rgba(45, 107, 100, 0.08);
+  }
+  .step.completed {
+    opacity: 0.85;
+    border: 1.5px solid var(--success);
+    background: rgba(74, 124, 58, 0.06);
+  }
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .step-num {
+    width: 28px; height: 28px;
+    background: var(--teal);
+    color: #fff;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .step.completed .step-num {
+    background: var(--success);
+  }
+  .step-title {
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .step-hint {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+
+  /* ============ CHOICE BUTTONS ============ */
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .choice-btn {
+    text-align: left;
+    background: #fff;
+    border: 1.5px solid var(--ink-soft);
+    padding: 12px 16px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14.5px;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    line-height: 1.6;
+  }
+  .choice-btn:hover:not(:disabled) {
+    background: #fff9e8;
+    border-color: var(--teal);
+    transform: translateX(3px);
+  }
+  .choice-btn:disabled {
+    cursor: not-allowed;
+  }
+  .choice-btn.correct {
+    background: rgba(74, 124, 58, 0.15);
+    border-color: var(--success);
+    border-width: 2px;
+    color: var(--success);
+    font-weight: 600;
+  }
+  .choice-btn.correct::after {
+    content: "✓ 正确";
+    position: absolute;
+    right: 12px; top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Special Elite', monospace;
+    font-size: 11px;
+    color: var(--success);
+  }
+  .choice-btn.wrong {
+    background: rgba(160, 32, 32, 0.1);
+    border-color: var(--danger);
+    color: var(--danger);
+    text-decoration: line-through;
+    opacity: 0.7;
+  }
+  .choice-btn.wrong::after {
+    content: "✗";
+    position: absolute;
+    right: 14px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: var(--danger);
+  }
+
+  /* ============ TEXT INPUT ============ */
+  .text-input {
+    width: 100%;
+    background: #fff;
+    border: 1.5px solid var(--ink-soft);
+    padding: 10px 14px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 15px;
+    color: var(--ink);
+    resize: vertical;
+    min-height: 60px;
+  }
+  .text-input:focus {
+    outline: none;
+    border-color: var(--teal);
+    border-width: 2px;
+    padding: 9px 13px;
+  }
+  .word-input {
+    width: 200px;
+    background: #fff;
+    border: none;
+    border-bottom: 2px solid var(--ink);
+    padding: 6px 10px;
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 22px;
+    color: var(--red-stamp);
+    text-align: center;
+  }
+  .word-input:focus {
+    outline: none;
+    border-bottom-color: var(--teal);
+    background: #fff9e8;
+  }
+
+  .template-box {
+    background: rgba(192, 136, 40, 0.1);
+    border: 1px dashed var(--gold);
+    padding: 14px 16px;
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 15px;
+    line-height: 2.2;
+    margin: 10px 0;
+  }
+  .template-box .fill {
+    display: inline-block;
+    min-width: 180px;
+    border-bottom: 2px solid var(--ink-soft);
+    padding: 2px 6px;
+  }
+  .template-box .fill input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: inherit;
+    color: var(--red-stamp);
+    outline: none;
+    padding: 0;
+  }
+
+  /* ============ SUBMIT / ACTION BUTTONS ============ */
+  .btn {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 10px 22px;
+    font-family: 'Special Elite', monospace;
+    font-size: 13px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--gold);
+    transition: all 0.15s;
+    margin-top: 10px;
+  }
+  .btn:hover:not(:disabled) {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--gold);
+  }
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--red-stamp);
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .btn-primary:hover:not(:disabled) {
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+
+  /* ============ FEEDBACK ============ */
+  .feedback {
+    margin-top: 14px;
+    padding: 14px 18px;
+    font-size: 14.5px;
+    line-height: 1.8;
+    border-left: 4px solid var(--teal);
+    background: rgba(45, 107, 100, 0.08);
+    animation: slideIn 0.4s ease;
+  }
+  .feedback.correct {
+    border-left-color: var(--success);
+    background: rgba(74, 124, 58, 0.1);
+    color: #2d4a23;
+  }
+  .feedback.wrong {
+    border-left-color: var(--danger);
+    background: rgba(160, 32, 32, 0.08);
+    color: #7a1818;
+  }
+  .feedback-title {
+    font-weight: 700;
+    margin-bottom: 6px;
+    font-family: 'ZCOOL XiaoWei', serif;
+    font-size: 16px;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ============ CASE SUMMARY ============ */
+  .case-summary {
+    margin-top: 20px;
+    padding: 18px 22px;
+    background: linear-gradient(135deg, #2d6b64 0%, #1f4a45 100%);
+    color: #fdf6e3;
+    border: 2px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--ink);
+    display: none;
+  }
+  .case-summary.show { display: block; animation: slideIn 0.5s ease; }
+  .case-summary h3 {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 24px;
+    margin-bottom: 8px;
+  }
+  .stars {
+    font-size: 28px;
+    letter-spacing: 6px;
+    margin: 8px 0;
+  }
+  .next-btn {
+    margin-top: 14px;
+    background: var(--gold);
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  /* ============ FINAL / VICTORY ============ */
+  .victory {
+    background: linear-gradient(135deg, #f7eedb 0%, #ead9b5 100%);
+    border: 3px solid var(--ink);
+    padding: 40px 40px;
+    text-align: center;
+    box-shadow: 6px 6px 0 var(--red-stamp);
+    display: none;
+  }
+  .victory.show { display: block; animation: slideIn 0.6s ease; }
+  .victory h2 {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 48px;
+    color: var(--red-stamp);
+    margin-bottom: 10px;
+  }
+  .victory-stamp {
+    font-family: 'Special Elite', monospace;
+    font-size: 14px;
+    letter-spacing: 3px;
+    color: var(--red-stamp);
+    border: 3px double var(--red-stamp);
+    padding: 10px 24px;
+    display: inline-block;
+    margin: 16px 0;
+    transform: rotate(-3deg);
+  }
+  .victory p { font-size: 17px; color: var(--ink-soft); margin: 10px 0; }
+  .final-score {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 80px;
+    color: var(--red-stamp);
+    line-height: 1;
+    margin: 10px 0;
+  }
+
+  /* ============ PROGRESS DOTS ============ */
+  .progress-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 16px 0;
+  }
+  .pdot {
+    width: 22px; height: 22px;
+    border: 2px solid var(--ink-soft);
+    border-radius: 50%;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 10px;
+    color: var(--ink-soft);
+  }
+  .pdot.current { background: var(--gold); border-color: var(--ink); color: var(--ink); transform: scale(1.15); }
+  .pdot.done { background: var(--success); border-color: var(--success); color: #fff; }
+
+  /* ============ XP FLOAT ============ */
+  .xp-float {
+    position: fixed;
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 36px;
+    color: var(--gold);
+    text-shadow: 2px 2px 0 var(--ink);
+    pointer-events: none;
+    animation: floatUp 1.4s ease-out forwards;
+    z-index: 100;
+  }
+  @keyframes floatUp {
+    0% { opacity: 0; transform: translateY(0) scale(0.5); }
+    20% { opacity: 1; transform: translateY(-20px) scale(1.2); }
+    100% { opacity: 0; transform: translateY(-120px) scale(1); }
+  }
+
+  /* ============ MODAL ============ */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(31,27,20,0.6);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 200;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: var(--paper);
+    border: 2px solid var(--ink);
+    padding: 24px 28px;
+    max-width: 420px;
+    box-shadow: 6px 6px 0 var(--red-stamp);
+  }
+  .modal h3 {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  /* Small screens */
+  @media (max-width: 600px) {
+    body { padding: 10px; }
+    .case-title { font-size: 32px; }
+    .hud { grid-template-columns: 1fr 1fr; }
+    .file-header, .intro-card, .story-panel, .case-panel { padding: 20px; }
+    .case-heading { font-size: 22px; }
+    .story-body p { font-size: 14.5px; }
+    .question-stem { font-size: 14.5px; padding: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ HEADER ============ -->
+  <div class="file-header">
+    <div class="case-label">CASE FILE · 2026 · No. 007</div>
+    <div class="case-title">模糊的世界</div>
+    <div class="case-subtitle">📁 阅读侦探游戏　·　调查员：<span id="detectiveName">你</span></div>
+  </div>
+
+  <!-- ============ HUD ============ -->
+  <div class="hud">
+    <div class="hud-card">
+      <div class="hud-label">调查进度</div>
+      <div class="hud-value"><span id="hudProgress">0</span>/7</div>
+      <div class="hud-bar"><div class="hud-bar-fill" id="progressBar" style="width:0%"></div></div>
+    </div>
+    <div class="hud-card">
+      <div class="hud-label">破案得分</div>
+      <div class="hud-value"><span id="hudScore">0</span>/22</div>
+    </div>
+    <div class="hud-card">
+      <div class="hud-label">侦探等级</div>
+      <div class="hud-value" id="hudRank">见习</div>
+    </div>
+  </div>
+
+  <!-- ============ INTRO ============ -->
+  <div id="introScreen" class="intro-card">
+    <h2>📋 案件简报</h2>
+    <p>亲爱的调查员，一双眼睛向警局求助了。它的主人 <strong>志强</strong> 最近行为可疑，眼睛感到极度痛苦，怀疑自己正在被"伤害"。</p>
+    <div class="briefing">
+      CASE NO. 007　·　受害者：志强的眼睛<br>
+      嫌疑人：一款手机游戏（详情待查）<br>
+      你的任务：阅读 <strong>证据档案《模糊的世界》</strong>，破解7个关卡，找出真相，帮志强改掉坏习惯。
+    </div>
+    <p>💡 <strong>侦探技巧：</strong>每个关卡都会一步一步带你破案。不用一次答出全部——跟着线索走就行。</p>
+    <p>🎯 <strong>计分规则：</strong>共22分。满18分获"金牌侦探"，满14分获"铜牌侦探"。</p>
+
+    <!-- 姓名登记：要先报上警号才能开始调查 -->
+    <div style="margin-top:20px; padding:16px 18px; background:#fff; border:2px solid var(--ink); box-shadow:3px 3px 0 var(--ink);">
+      <label for="playerName" style="display:block; font-family:'Special Elite',monospace; font-size:13px; letter-spacing:2px; color:var(--ink-soft); margin-bottom:8px;">🕵 调查员登记 · DETECTIVE ID</label>
+      <input id="playerName" type="text" maxlength="30" placeholder="例如：5E 12 李明" autocomplete="off"
+        style="width:100%; padding:10px 12px; font-size:16px; font-family:'Noto Serif SC',serif; border:2px solid var(--ink); background:#f7eedb; outline:none;"/>
+      <div style="font-size:12px; color:var(--ink-soft); margin-top:8px;">你的作答会自动归档到云端，指导老师可以查看你的调查记录。</div>
+    </div>
+
+    <button class="btn btn-primary" id="startBtn" onclick="startGame()" style="margin-top:16px;">▶ 开始调查</button>
+    <a href="teacher.html" target="_blank" style="display:inline-block; margin-left:12px; font-size:13px; color:var(--teal); text-decoration:none;">👨‍🏫 老师后台 →</a>
+  </div>
+
+  <!-- ============ STORY PANEL ============ -->
+  <div id="storyPanel" class="story-panel" style="display:none;">
+    <div class="story-title">模糊的世界</div>
+    <div class="story-body" id="storyBody">
+      <p id="p1">志强最近迷上了一款手机游戏。从学校回到家，他一放下书包，就窝在沙发上，<span class="clue-word" data-clue="盯屏幕">目不转睛</span>地盯着屏幕。妈妈劝他休息，他嘴上答应，手指却不肯停。晚上，他关了灯躲在被窝里继续玩，常常玩到三更半夜。</p>
+      <p id="p2">才过了三个月，他整天<span class="clue-word">无精打采</span>，上课不停地打哈欠，功课也越做越差。更糟糕的是，他看黑板上的字越来越<span class="clue-word">模糊</span>，一读书就头疼、咳嗽，成了组屋楼下那家诊所的<span class="clue-word" data-clue="常客">常客</span>。</p>
+      <p id="p3">这个周六早上，妈妈让志强带七岁的妹妹佳佳到楼下的巴刹买水果。志强一手牵着佳佳，一手还在划手机。走到巴刹前的马路边，佳佳忽然挣脱他的手，跑向对面一只小猫。一辆摩托车"呼"地一下从前方冲了过来——</p>
+      <p id="p4">"佳佳！"志强猛地抬头，眼前一片模糊，只看见一个灰影从妹妹身边擦过。他的手在发抖，手机"啪"地一声掉在地上。还好，摩托车及时刹住了，佳佳吓得哇哇大哭。</p>
+      <p id="p5">志强愣在原地，半天说不出话。回家的路上，妈妈一句话也没说，只是紧紧地握着他的手。那只手冰凉冰凉的。</p>
+      <p id="p6">下午，妈妈带志强去陈医生的诊所。陈医生看过他的眼睛，皱着眉头说："度数又加深了。再这样下去，视力还会继续下降。"回家时，妈妈把他的手机轻轻地放在桌上，说："你自己决定吧。"</p>
+      <p id="p7">那天晚上，志强坐在书桌前，翻开课本，书上的字一个个都在跳动。他想起佳佳那声哭喊，想起妈妈冰凉的手，心里一阵<span class="clue-word">痛苦</span>。他站起来，走到客厅，把手机<span class="clue-word" data-clue="抛">抛</span>进抽屉，"咔"地一声锁上。</p>
+      <p id="p8">从那天起，志强每天只在做完功课后玩二十分钟电脑，一到九点就上床睡觉。每个星期六，他都陪佳佳到公园跑步。几个月后，他再去找陈医生复查时，陈医生笑着说："视力稳定了，你终于听进去了。"志强转过头，看见妈妈正站在诊所门口，对着他轻轻地笑。</p>
+      <p id="p9">那一刻，他眼中的世界，清清楚楚。</p>
+    </div>
+  </div>
+
+  <!-- ============ CASE PANEL (current question) ============ -->
+  <div id="casePanel"></div>
+
+  <!-- ============ VICTORY ============ -->
+  <div id="victory" class="victory">
+    <h2>🎉 案件告破！</h2>
+    <div class="victory-stamp">案件已结案 · CASE CLOSED</div>
+    <p>调查员 <strong id="vName">你</strong>，</p>
+    <p>经过你的努力，志强已经改掉了坏习惯。他的眼睛得救了！</p>
+    <div class="final-score"><span id="vScore">0</span>/22</div>
+    <div class="stars" id="vStars">⭐⭐⭐</div>
+    <p id="vRank" style="font-family:'Ma Shan Zheng',cursive; font-size:28px; color:var(--red-stamp);">金牌侦探</p>
+    <p id="vFeedback" style="max-width:500px; margin:16px auto 0;"></p>
+    <button class="btn btn-primary" onclick="restartGame()" style="margin-top:20px;">🔄 重新调查</button>
+  </div>
+
+</div>
+
+<!-- Hint modal -->
+<div id="hintModal" class="modal-bg">
+  <div class="modal">
+    <h3>💡 侦探提示</h3>
+    <p id="hintText" style="margin-bottom:16px;"></p>
+    <button class="btn" onclick="closeHint()">知道了</button>
+  </div>
+</div>
+
+<audio id="sndCorrect" src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="></audio>
+
+<script type="module">
+import {
+  ensureAuth, col, addDoc, updateDoc, serverTimestamp
+} from '../_shared/firebase.js';
+
+// ========================================================================
+// GAME DATA: 7 cases, each with scaffolded steps
+// ========================================================================
+const CASES = [
+  // ----- Q34 -----
+  {
+    q: 34,
+    title: "关卡一：失踪的词语",
+    meta: "认知层次：信息提取　·　难度 ★☆☆☆",
+    stem: '文中表示"<b>经常去某个地方的人</b>"的词语是什么？',
+    marks: 2,
+    steps: [
+      {
+        type: "choice",
+        title: "步骤 1　找到线索所在的段落",
+        hint: "提示：这个词描述志强常常因为身体不好去某个地方。",
+        choices: [
+          { t: "第一段：志强迷上手机游戏，盯着屏幕。", ok: false, fb: "再想想——这段讲的是坏习惯的开始，不是去哪里。" },
+          { t: "第二段：志强无精打采、看字模糊、成了诊所的___。", ok: true, fb: "答对了！关键线索就藏在这里。" },
+          { t: "第五段：志强愣在原地说不出话。", ok: false, fb: "这段是讲他的反应，不是去哪里。" },
+        ],
+        highlight: "p2"
+      },
+      {
+        type: "word",
+        title: "步骤 2　填入那个词",
+        hint: "提示：一个人总是去同一家店，我们说他是那家店的 ___ ？（2个字）",
+        answer: ["常客"],
+        template: "志强因为经常生病，成了诊所的 <<INPUT>>。",
+      },
+    ],
+    reward: 2,
+  },
+
+  // ----- Q35 -----
+  {
+    q: 35,
+    title: "关卡二：志强的秘密动作",
+    meta: "认知层次：信息提取　·　难度 ★☆☆☆",
+    stem: '文中表示"<b>把东西用力扔出去</b>"的词语是什么？',
+    marks: 2,
+    steps: [
+      {
+        type: "choice",
+        title: "步骤 1　找到那个关键动作",
+        hint: "提示：志强下决心改变后，他对手机做了一件事。",
+        choices: [
+          { t: "他把手机放进书包", ok: false, fb: "'放进'太温和，题目说的是'用力扔出去'。" },
+          { t: "他把手机送给了妹妹", ok: false, fb: "文中没有这样写哦。" },
+          { t: "他把手机___进抽屉，锁上。", ok: true, fb: "对！这个动作很关键。" },
+        ],
+        highlight: "p7"
+      },
+      {
+        type: "word",
+        title: "步骤 2　填入那个动作",
+        hint: "提示：一个字。很用力地扔东西。例如：把球 ___ 出去。",
+        answer: ["抛"],
+        template: "他把手机 <<INPUT>> 进抽屉。",
+      },
+    ],
+    reward: 2,
+  },
+
+  // ----- Q36 -----
+  {
+    q: 36,
+    title: "关卡三：三个月的变化",
+    meta: "认知层次：情节重整（多点整合）　·　难度 ★★☆☆",
+    stem: "自从志强迷上手机游戏后，他的身体和生活出现了<b>哪三个变化</b>？",
+    marks: 3,
+    steps: [
+      {
+        type: "multi-choice",
+        title: "步骤 1　选出文中出现的3个变化（多选）",
+        hint: "提示：从下面6项中选出文中真正提到的3项。点击可多次切换。",
+        options: [
+          { t: "整晚目不转睛盯屏幕到三更半夜", ok: true },
+          { t: "和朋友吵架，不去上学", ok: false },
+          { t: "睡眠不足，整天无精打采，功课变差", ok: true },
+          { t: "开始抽烟和喝酒", ok: false },
+          { t: "看字模糊、头疼、咳嗽，成诊所常客", ok: true },
+          { t: "成绩考了全班第一", ok: false },
+        ],
+        need: 3,
+      },
+      {
+        type: "write",
+        title: "步骤 2　用自己的话写出三点",
+        hint: "提示：按顺序（先→后）写。第一点写游戏习惯，第二点写身体/精神，第三点写视力/健康。",
+        template: "<b>变化一：</b><br><<INPUT>><br><b>变化二：</b><br><<INPUT>><br><b>变化三：</b><br><<INPUT>>",
+        model: [
+          "志强整晚目不转睛地盯着屏幕，玩到三更半夜。",
+          "因为睡眠不足，他整天无精打采，功课越做越差。",
+          "他看字越来越模糊，经常头疼、咳嗽，成了诊所的常客。"
+        ],
+        inputs: 3,
+      },
+    ],
+    reward: 3,
+  },
+
+  // ----- Q37 -----
+  {
+    q: 37,
+    title: "关卡四：马路边的惊险一刻",
+    meta: "认知层次：伸展推理（动作 + 原因）　·　难度 ★★★☆",
+    stem: "佳佳冲向马路对面的一刻，志强有什么反应？<span class='marks'>（2分）</span>他为什么会有这样的反应？<span class='marks'>（2分）</span>",
+    marks: 4,
+    steps: [
+      {
+        type: "multi-choice",
+        title: "步骤 1　找出志强的反应（多选：选出2项动作）",
+        hint: "提示：文中连续用了几个动作描写志强的反应。",
+        options: [
+          { t: "猛地抬头，眼前一片模糊", ok: true },
+          { t: "大声叫救命", ok: false },
+          { t: "手在发抖，手机\"啪\"地掉在地上", ok: true },
+          { t: "冲过去抱住佳佳", ok: false },
+          { t: "立刻拿出手机拍照", ok: false },
+        ],
+        need: 2,
+      },
+      {
+        type: "choice",
+        title: "步骤 2　志强为什么反应这么慢、这么紧张？",
+        hint: "提示：结合前面几段提到他的视力和他当时在做什么。",
+        choices: [
+          { t: "因为他不喜欢妹妹", ok: false, fb: "文中没有这样的线索。" },
+          { t: "因为他的视力下降，看不清路况；加上想到妹妹差一点出事，所以又害怕又自责。", ok: true, fb: "答对了！这是他反应慢又吓坏的真正原因。" },
+          { t: "因为天气很冷", ok: false, fb: "和天气无关。" },
+        ]
+      },
+      {
+        type: "write",
+        title: "步骤 3　把完整答案组织起来",
+        hint: "用'因为……所以……'把原因说清楚。",
+        template: "<b>反应：</b><br><<INPUT>><br><br><b>原因（用\"因为……所以……\"）：</b><br><<INPUT>>",
+        model: [
+          "志强猛地抬头，眼前一片模糊，手在发抖，手机\"啪\"地掉在地上。",
+          "因为志强的视力已经下降，看不清路况，所以他反应不过来；加上他看到妹妹差点被摩托车撞到，感到非常害怕和自责。"
+        ],
+        inputs: 2,
+      },
+    ],
+    reward: 4,
+  },
+
+  // ----- Q38 -----
+  {
+    q: 38,
+    title: "关卡五：冰凉的手",
+    meta: "认知层次：伸展推理（动作含义 + 情感暗示）　·　难度 ★★★☆",
+    stem: "回家的路上，妈妈\"紧紧地握着\"志强的手——妈妈这样做<b>表示什么</b>？<span class='marks'>（2分）</span>那只手\"冰凉冰凉的\"，又<b>说明了什么</b>？<span class='marks'>（2分）</span>",
+    marks: 4,
+    steps: [
+      {
+        type: "choice",
+        title: "步骤 1　妈妈\"紧紧握手\"+\"一句话也没说\"是什么意思？",
+        hint: "提示：妈妈没有开口骂他，但她的动作说明了什么？",
+        choices: [
+          { t: "妈妈太高兴了", ok: false, fb: "差点出事，不可能高兴。" },
+          { t: "妈妈没有用语言责骂，但用动作表示她受到了极大的惊吓，要志强记住这次教训。", ok: true, fb: "对！没有骂人，但比责骂更重。" },
+          { t: "妈妈觉得很无聊", ok: false, fb: "差点出事不会无聊。" },
+        ],
+      },
+      {
+        type: "choice",
+        title: "步骤 2　\"冰凉冰凉的\"手说明了什么？",
+        hint: "提示：人在什么情况下，手会变凉？",
+        choices: [
+          { t: "妈妈生病了", ok: false, fb: "文中没有说妈妈生病。" },
+          { t: "妈妈不爱志强了", ok: false, fb: "恰恰相反——妈妈太在乎，才会这样。" },
+          { t: "妈妈因为刚才差点失去佳佳而非常害怕，到现在身体和心里还没恢复过来。", ok: true, fb: "答对了！冰凉的手是害怕的身体反应。" },
+        ],
+      },
+      {
+        type: "write",
+        title: "步骤 3　把答案写完整",
+        hint: "分两部分写。",
+        template: "<b>\"紧紧地握着\"表示：</b><br><<INPUT>><br><br><b>\"冰凉冰凉的\"说明：</b><br><<INPUT>>",
+        model: [
+          "妈妈虽然没有开口责骂志强，但她用这个动作表达她受到了极大的惊吓，也要志强记住这次教训。",
+          "妈妈因为刚才差点失去佳佳而非常害怕，虽然事情过去了，身体和心里还没有完全恢复过来。"
+        ],
+        inputs: 2,
+      },
+    ],
+    reward: 4,
+  },
+
+  // ----- Q39 -----
+  {
+    q: 39,
+    title: "关卡六：痛苦的夜晚",
+    meta: "认知层次：伸展推理（情感原因）　·　难度 ★★★★",
+    stem: "那天晚上，志强把手机抛进抽屉，为什么他心里感到<b>一阵痛苦</b>？",
+    marks: 4,
+    steps: [
+      {
+        type: "multi-choice",
+        title: "步骤 1　他想起了哪两件事？（多选：选出2项）",
+        hint: "提示：文中清楚写了他'想起'什么。",
+        options: [
+          { t: "想起佳佳那声哭喊", ok: true },
+          { t: "想起老师上课讲的故事", ok: false },
+          { t: "想起妈妈冰凉的手", ok: true },
+          { t: "想起手机游戏的分数", ok: false },
+          { t: "想起去年的生日", ok: false },
+        ],
+        need: 2,
+      },
+      {
+        type: "choice",
+        title: "步骤 2　这两件事让他明白了什么？",
+        hint: "提示：他的坏习惯造成了什么后果？",
+        choices: [
+          { t: "他玩游戏还不够多", ok: false, fb: "完全相反——他玩得太多了。" },
+          { t: "他沉迷手机差点害了妹妹，也让妈妈担心受怕，自己也伤害了眼睛。", ok: true, fb: "对！这就是他痛苦的原因。" },
+          { t: "妈妈不爱他", ok: false, fb: "妈妈恰恰非常爱他才担心。" },
+        ],
+      },
+      {
+        type: "write",
+        title: "步骤 3　用'因为……所以……'写完整答案",
+        hint: "写两个原因。句式：因为他想起___，___；又因为他想起___，___。",
+        template: "<b>原因一：</b><br><<INPUT>><br><br><b>原因二：</b><br><<INPUT>>",
+        model: [
+          "因为志强想起佳佳冲向马路时的哭喊，他意识到自己沉迷手机，差点害妹妹被摩托车撞到，感到非常自责。",
+          "因为他想起妈妈冰凉的手，他明白自己的坏习惯伤害了眼睛，也让妈妈担心受怕，所以心里非常痛苦。"
+        ],
+        inputs: 2,
+      },
+    ],
+    reward: 4,
+  },
+
+  // ----- Q40 -----
+  {
+    q: 40,
+    title: "关卡七：侦探的判决",
+    meta: "认知层次：评价 + 生活迁移　·　难度 ★★★★",
+    stem: "志强把手机锁进抽屉，规定自己每天只能玩二十分钟。你<b>赞成</b>他的做法吗？<span class='marks'>（1分）</span>请结合短文<b>说明理由</b>。<span class='marks'>（1分）</span>在生活中，如果你也对某样东西上瘾（例如电视、手机、漫画），<b>你会怎么做</b>？<span class='marks'>（2分）</span>",
+    marks: 4,
+    steps: [
+      {
+        type: "choice",
+        title: "步骤 1　你的立场",
+        hint: "先选出你的立场。",
+        choices: [
+          { t: "我赞成志强的做法。", ok: true, fb: "好——接下来说明理由。" },
+          { t: "我不赞成志强的做法。", ok: "open", fb: "这也是一个有趣的角度，只要你能用文中内容说明理由也可以。" },
+        ],
+      },
+      {
+        type: "choice",
+        title: "步骤 2　选一个结合短文的理由",
+        hint: "从文中找出支持你立场的事实。",
+        choices: [
+          { t: "志强已经视力下降、身体变差、差点害妹妹出事。锁手机和限制时间能真正帮他改掉坏习惯。", ok: true, fb: "证据很充分！" },
+          { t: "因为志强考试得了一百分。", ok: false, fb: "文中没有这一点。" },
+          { t: "因为陈医生说他已经完全好了。", ok: false, fb: "陈医生说的是'视力稳定'，不是'完全好'。" },
+        ],
+      },
+      {
+        type: "write",
+        title: "步骤 3　生活迁移：写出你自己的做法",
+        hint: "好答案 = 触发场景 + 具体行动 + 结果。填完三个空，答案自动完整。",
+        template: "<b>触发场景（什么时候我会上瘾？）：</b><br><<INPUT>><br><br><b>具体行动（我会怎么做？）：</b><br><<INPUT>><br><br><b>结果（这样做有什么好处？）：</b><br><<INPUT>>",
+        model: [
+          "一有空就想看电视上的卡通片，常常看到很晚都不肯做功课。",
+          "把遥控器交给妈妈保管，规定自己只有在周末做完功课后才能看半小时电视。",
+          "我能专心学习，不会熬夜影响睡眠和视力。"
+        ],
+        inputs: 3,
+      },
+    ],
+    reward: 4,
+  },
+];
+
+// ========================================================================
+// GAME STATE
+// ========================================================================
+let state = {
+  currentCase: 0,
+  currentStep: 0,
+  score: 0,
+  caseScore: 0,
+  stepResults: [],
+  started: false,
+  // Firestore 记录
+  name: '',
+  authUid: '',
+  recRef: null,
+  cases: {},      // {q34:{steps:[...], earned:0}, ...}
+};
+
+const RANKS = [
+  { min: 0, name: "见习" },
+  { min: 6, name: "初级" },
+  { min: 12, name: "中级" },
+  { min: 18, name: "金牌" },
+];
+
+// ========================================================================
+// FIRESTORE 记录
+// ========================================================================
+const COLLECTION = 'detective_records';
+
+async function initRecord(name) {
+  try {
+    const user = await ensureAuth();
+    state.authUid = user.uid;
+    state.name = name;
+    const payload = {
+      authUid: user.uid,
+      name,
+      tool: 'detective',
+      cases: {}, score: 0,
+      completed: false, rank: '',
+      startedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    const ref = await addDoc(col(COLLECTION), payload);
+    state.recRef = ref;
+  } catch (e) {
+    console.error('Firestore 初始化失败', e);
+    alert('⚠️ 无法连接到云端归档系统，你的作答可能不会被老师看到。\n请检查网络后重试。\n\n' + (e.message || e));
+  }
+}
+
+async function persist(patch) {
+  if (!state.recRef) return;
+  try {
+    await updateDoc(state.recRef, {
+      cases: state.cases,
+      score: state.score,
+      updatedAt: serverTimestamp(),
+      ...(patch || {})
+    });
+  } catch (e) { console.warn('Firestore 保存失败', e); }
+}
+
+function caseKey() { return 'q' + CASES[state.currentCase].q; }
+
+function recordStep(stepIdx, data) {
+  const k = caseKey();
+  if (!state.cases[k]) {
+    const c = CASES[state.currentCase];
+    state.cases[k] = {
+      q: c.q, title: c.title, marks: c.marks,
+      steps: [], earned: 0, startedAt: new Date().toISOString()
+    };
+  }
+  const prev = state.cases[k].steps[stepIdx] || { attempts: 0 };
+  prev.attempts = (prev.attempts || 0) + 1;
+  prev.latest = { ...data, at: new Date().toISOString() };
+  state.cases[k].steps[stepIdx] = prev;
+  persist();
+}
+
+// ========================================================================
+// INIT / FLOW
+// ========================================================================
+async function startGame() {
+  const inp = document.getElementById('playerName');
+  const name = (inp.value || '').trim();
+  if (name.length < 1) {
+    inp.focus();
+    inp.style.borderColor = 'var(--red-warn)';
+    inp.style.background = '#ffe4e4';
+    return;
+  }
+  const btn = document.getElementById('startBtn');
+  btn.disabled = true;
+  btn.textContent = '连接归档系统中…';
+  await initRecord(name);
+  document.getElementById('detectiveName').textContent = name;
+  state.started = true;
+  document.getElementById('introScreen').style.display = 'none';
+  document.getElementById('storyPanel').style.display = 'block';
+  renderCase();
+}
+
+function renderCase() {
+  const c = CASES[state.currentCase];
+  state.currentStep = 0;
+  state.caseScore = 0;
+  state.stepResults = new Array(c.steps.length).fill(null);
+
+  const panel = document.getElementById('casePanel');
+  let html = `
+    <div class="case-panel" id="currentCase">
+      <div class="case-badge">案件 Q${c.q}　·　${c.marks} 分</div>
+      <h3 class="case-heading">${c.title}</h3>
+      <div class="case-meta">${c.meta}</div>
+      <div class="question-stem">📌 ${c.stem}</div>
+      <div class="progress-dots">
+  `;
+  c.steps.forEach((_, i) => {
+    html += `<span class="pdot ${i === 0 ? 'current' : ''}" id="pdot-${i}">${i+1}</span>`;
+  });
+  html += '</div>';
+
+  c.steps.forEach((s, i) => {
+    html += renderStep(s, i);
+  });
+
+  html += `<div class="case-summary" id="caseSummary"></div></div>`;
+  panel.innerHTML = html;
+
+  updateHUD();
+}
+
+function renderStep(step, idx) {
+  let html = `<div class="step ${idx === 0 ? 'active' : ''}" id="step-${idx}">
+    <div class="step-header">
+      <div class="step-num">${idx + 1}</div>
+      <div class="step-title">${step.title}</div>
+    </div>
+    <div class="step-hint">${step.hint}</div>`;
+
+  if (step.type === "choice") {
+    html += `<div class="choices">`;
+    step.choices.forEach((ch, j) => {
+      html += `<button class="choice-btn" data-idx="${idx}" data-choice="${j}" onclick="pickChoice(${idx}, ${j})">${ch.t}</button>`;
+    });
+    html += `</div>`;
+  }
+  else if (step.type === "multi-choice") {
+    html += `<div class="choices" id="mc-${idx}">`;
+    step.options.forEach((op, j) => {
+      html += `<button class="choice-btn" id="mc-${idx}-${j}" onclick="toggleMulti(${idx}, ${j})">${op.t}</button>`;
+    });
+    html += `</div>
+      <button class="btn btn-primary" id="mc-submit-${idx}" onclick="submitMulti(${idx})" style="margin-top:12px;">✓ 确认选择</button>`;
+  }
+  else if (step.type === "word") {
+    const tpl = step.template.replace('<<INPUT>>',
+      `<input class="word-input" id="word-${idx}" placeholder="?" autocomplete="off">`);
+    html += `<div class="template-box">${tpl}</div>
+      <button class="btn btn-primary" onclick="submitWord(${idx})">🔍 提交破案</button>`;
+  }
+  else if (step.type === "write") {
+    let inpCount = 0;
+    const tpl = step.template.replace(/<<INPUT>>/g, () => {
+      const i = inpCount++;
+      return `<textarea class="text-input" id="write-${idx}-${i}" rows="2"></textarea>`;
+    });
+    html += `<div class="template-box" style="background:rgba(45,107,100,0.06); border-color:var(--teal);">${tpl}</div>
+      <button class="btn btn-primary" onclick="submitWrite(${idx})">📝 提交答案</button>
+      <div class="model-answer" id="model-${idx}" style="display:none;"></div>`;
+  }
+
+  html += `<div class="feedback" id="fb-${idx}" style="display:none;"></div></div>`;
+  return html;
+}
+
+// ========================================================================
+// STEP INTERACTIONS
+// ========================================================================
+function pickChoice(stepIdx, choiceIdx) {
+  const c = CASES[state.currentCase];
+  const step = c.steps[stepIdx];
+  const pick = step.choices[choiceIdx];
+
+  // disable all in this step
+  document.querySelectorAll(`#step-${stepIdx} .choice-btn`).forEach((b) => b.disabled = true);
+  const btn = document.querySelector(`#step-${stepIdx} .choice-btn[data-choice="${choiceIdx}"]`);
+
+  // highlight story if specified
+  if (step.highlight && pick.ok === true) highlightStory(step.highlight);
+
+  const fb = document.getElementById(`fb-${stepIdx}`);
+  fb.style.display = 'block';
+
+  if (pick.ok === true) {
+    btn.classList.add('correct');
+    fb.className = 'feedback correct';
+    fb.innerHTML = `<div class="feedback-title">✓ 线索锁定！</div>${pick.fb}`;
+    state.stepResults[stepIdx] = true;
+    recordStep(stepIdx, { type: 'choice', title: step.title, picked: pick.t, result: 'correct' });
+    completeStep(stepIdx);
+  } else if (pick.ok === "open") {
+    btn.classList.add('correct');
+    fb.className = 'feedback';
+    fb.innerHTML = `<div class="feedback-title">💡 注意</div>${pick.fb}`;
+    state.stepResults[stepIdx] = "open";
+    recordStep(stepIdx, { type: 'choice', title: step.title, picked: pick.t, result: 'open' });
+    completeStep(stepIdx);
+  } else {
+    btn.classList.add('wrong');
+    fb.className = 'feedback wrong';
+    fb.innerHTML = `<div class="feedback-title">✗ 再想想</div>${pick.fb}`;
+    recordStep(stepIdx, { type: 'choice', title: step.title, picked: pick.t, result: 'wrong' });
+    // allow retry for wrong in single-choice
+    setTimeout(() => {
+      document.querySelectorAll(`#step-${stepIdx} .choice-btn:not(.wrong)`).forEach((b) => b.disabled = false);
+    }, 900);
+  }
+}
+
+// Multi-choice toggle
+const multiState = {};
+function toggleMulti(stepIdx, optIdx) {
+  const key = `${state.currentCase}-${stepIdx}`;
+  if (!multiState[key]) multiState[key] = new Set();
+  const btn = document.getElementById(`mc-${stepIdx}-${optIdx}`);
+  if (multiState[key].has(optIdx)) {
+    multiState[key].delete(optIdx);
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    btn.style.fontWeight = '';
+  } else {
+    multiState[key].add(optIdx);
+    btn.style.background = '#fff3d6';
+    btn.style.borderColor = 'var(--gold)';
+    btn.style.fontWeight = '600';
+  }
+}
+
+function submitMulti(stepIdx) {
+  const c = CASES[state.currentCase];
+  const step = c.steps[stepIdx];
+  const key = `${state.currentCase}-${stepIdx}`;
+  const picked = multiState[key] || new Set();
+
+  if (picked.size !== step.need) {
+    alert(`请选出 ${step.need} 项。目前选了 ${picked.size} 项。`);
+    return;
+  }
+
+  let correct = 0;
+  step.options.forEach((op, j) => {
+    const btn = document.getElementById(`mc-${stepIdx}-${j}`);
+    btn.disabled = true;
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    btn.style.fontWeight = '';
+    if (picked.has(j)) {
+      if (op.ok) { btn.classList.add('correct'); correct++; }
+      else { btn.classList.add('wrong'); }
+    } else if (op.ok) {
+      // missed correct - mark it subtly
+      btn.style.borderColor = 'var(--gold)';
+      btn.style.borderStyle = 'dashed';
+      btn.style.borderWidth = '2px';
+    }
+  });
+  document.getElementById(`mc-submit-${stepIdx}`).disabled = true;
+
+  const fb = document.getElementById(`fb-${stepIdx}`);
+  fb.style.display = 'block';
+  const pickedTexts = Array.from(picked).map(j => step.options[j].t);
+  if (correct === step.need) {
+    fb.className = 'feedback correct';
+    fb.innerHTML = `<div class="feedback-title">✓ 全部找到了！</div>你精准地找出了所有关键线索。`;
+    state.stepResults[stepIdx] = true;
+    recordStep(stepIdx, { type: 'multi-choice', title: step.title, picked: pickedTexts, correct, need: step.need, result: 'correct' });
+    completeStep(stepIdx);
+  } else {
+    fb.className = 'feedback wrong';
+    fb.innerHTML = `<div class="feedback-title">找对了 ${correct}/${step.need} 项</div>用虚线圈出的是遗漏的正确答案。看清楚后继续下一步。`;
+    state.stepResults[stepIdx] = "partial";
+    recordStep(stepIdx, { type: 'multi-choice', title: step.title, picked: pickedTexts, correct, need: step.need, result: 'partial' });
+    setTimeout(() => completeStep(stepIdx), 1500);
+  }
+}
+
+function submitWord(stepIdx) {
+  const c = CASES[state.currentCase];
+  const step = c.steps[stepIdx];
+  const input = document.getElementById(`word-${stepIdx}`);
+  const val = input.value.trim();
+  const fb = document.getElementById(`fb-${stepIdx}`);
+  fb.style.display = 'block';
+
+  if (step.answer.includes(val)) {
+    input.style.color = 'var(--success)';
+    input.disabled = true;
+    fb.className = 'feedback correct';
+    fb.innerHTML = `<div class="feedback-title">✓ 破案了！</div>就是"<b>${val}</b>"。`;
+    state.stepResults[stepIdx] = true;
+    recordStep(stepIdx, { type: 'word', title: step.title, answer: val, expected: step.answer, result: 'correct' });
+    completeStep(stepIdx);
+    floatXP(`+${c.reward} XP`);
+  } else {
+    input.style.color = 'var(--danger)';
+    fb.className = 'feedback wrong';
+    fb.innerHTML = `<div class="feedback-title">✗ 不对哦</div>再看看段落里的线索，注意这是一个${step.answer[0].length}字的词。`;
+    recordStep(stepIdx, { type: 'word', title: step.title, answer: val, expected: step.answer, result: 'wrong' });
+  }
+}
+
+function submitWrite(stepIdx) {
+  const c = CASES[state.currentCase];
+  const step = c.steps[stepIdx];
+  const count = step.inputs;
+  const answers = [];
+  let allFilled = true;
+  for (let i = 0; i < count; i++) {
+    const ta = document.getElementById(`write-${stepIdx}-${i}`);
+    const v = ta.value.trim();
+    if (!v || v.length < 3) allFilled = false;
+    answers.push(v);
+    ta.disabled = true;
+  }
+  const fb = document.getElementById(`fb-${stepIdx}`);
+  const modelDiv = document.getElementById(`model-${stepIdx}`);
+  fb.style.display = 'block';
+
+  if (!allFilled) {
+    // re-enable
+    for (let i = 0; i < count; i++) {
+      document.getElementById(`write-${stepIdx}-${i}`).disabled = false;
+    }
+    fb.className = 'feedback wrong';
+    fb.innerHTML = `<div class="feedback-title">答案太短</div>请每个空都写完整的一句话（至少3个字）。`;
+    return;
+  }
+
+  fb.className = 'feedback correct';
+  fb.innerHTML = `<div class="feedback-title">✓ 已提交！</div>你的答案已记录。下方是参考答案，比对一下看看自己的哪里可以改进。`;
+
+  let modelHtml = '<div style="margin-top:12px; padding:14px 16px; background:#fff3d6; border:1px dashed var(--gold); font-size:14px; line-height:1.9;"><b style="color:var(--red-stamp);">📖 参考答案：</b><ol style="margin-top:8px; padding-left:22px;">';
+  step.model.forEach((m) => { modelHtml += `<li style="margin-bottom:6px;">${m}</li>`; });
+  modelHtml += '</ol></div>';
+  modelDiv.innerHTML = modelHtml;
+  modelDiv.style.display = 'block';
+
+  state.stepResults[stepIdx] = true;
+  recordStep(stepIdx, { type: 'write', title: step.title, answers, model: step.model, result: 'submitted' });
+  completeStep(stepIdx);
+  floatXP(`+${c.reward} XP`);
+}
+
+// ========================================================================
+// STEP COMPLETION / PROGRESSION
+// ========================================================================
+function completeStep(stepIdx) {
+  const stepEl = document.getElementById(`step-${stepIdx}`);
+  stepEl.classList.remove('active');
+  stepEl.classList.add('completed');
+  const pdot = document.getElementById(`pdot-${stepIdx}`);
+  if (pdot) { pdot.classList.remove('current'); pdot.classList.add('done'); pdot.innerHTML = '✓'; }
+
+  const c = CASES[state.currentCase];
+  const nextIdx = stepIdx + 1;
+  if (nextIdx < c.steps.length) {
+    setTimeout(() => {
+      const next = document.getElementById(`step-${nextIdx}`);
+      next.classList.add('active');
+      const pn = document.getElementById(`pdot-${nextIdx}`);
+      if (pn) pn.classList.add('current');
+      next.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 600);
+  } else {
+    // case complete
+    setTimeout(() => showCaseSummary(), 800);
+  }
+}
+
+function showCaseSummary() {
+  const c = CASES[state.currentCase];
+  // compute case score based on stepResults
+  // simple rule: award full reward if no step was purely wrong/partial; partial = 70%
+  let pass = state.stepResults.filter(r => r === true || r === "open").length;
+  let partial = state.stepResults.filter(r => r === "partial").length;
+  let earned;
+  if (pass === c.steps.length) earned = c.reward;
+  else if (pass + partial === c.steps.length) earned = Math.ceil(c.reward * 0.7);
+  else earned = Math.max(1, Math.floor(c.reward * 0.5));
+
+  state.caseScore = earned;
+  state.score += earned;
+
+  // 保存本关得分到云端
+  const k = caseKey();
+  if (!state.cases[k]) state.cases[k] = { q: c.q, title: c.title, marks: c.marks, steps: [] };
+  state.cases[k].earned = earned;
+  state.cases[k].completedAt = new Date().toISOString();
+  persist();
+
+  let stars = '⭐⭐⭐';
+  if (earned < c.reward) stars = '⭐⭐';
+  if (earned < c.reward * 0.6) stars = '⭐';
+
+  const summary = document.getElementById('caseSummary');
+  summary.innerHTML = `
+    <h3>🔍 ${c.title.split('：')[1] || '关卡'} · 结案</h3>
+    <div class="stars">${stars}</div>
+    <p>本关得分：<b style="font-size:22px;">${earned}/${c.reward}</b> 分</p>
+    <p style="font-size:14px; opacity:0.9;">${earned === c.reward ? '完美破案！你的推理无懈可击。' : earned >= c.reward * 0.7 ? '接近真相——再仔细看看参考答案。' : '线索有些遗漏，但继续加油！'}</p>
+    <button class="btn next-btn" onclick="nextCase()">${state.currentCase < CASES.length - 1 ? '▶ 进入下一关卡' : '🏆 查看结案报告'}</button>
+  `;
+  summary.classList.add('show');
+  summary.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  updateHUD();
+  floatXP(`+${earned} 分`);
+}
+
+function nextCase() {
+  if (state.currentCase < CASES.length - 1) {
+    state.currentCase++;
+    renderCase();
+    // scroll to new case
+    setTimeout(() => {
+      document.getElementById('currentCase').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  } else {
+    showVictory();
+  }
+}
+
+// ========================================================================
+// VICTORY
+// ========================================================================
+function showVictory() {
+  document.getElementById('casePanel').style.display = 'none';
+  document.getElementById('storyPanel').style.display = 'none';
+  const v = document.getElementById('victory');
+  v.classList.add('show');
+  document.getElementById('vScore').textContent = state.score;
+
+  let rankName, stars, fb;
+  if (state.score >= 18) {
+    rankName = '🏅 金牌侦探';
+    stars = '⭐⭐⭐⭐⭐';
+    fb = '你精准地抓住了每条线索，推理清晰、证据充分。志强的故事在你手上圆满结案！';
+  } else if (state.score >= 14) {
+    rankName = '🥈 银牌侦探';
+    stars = '⭐⭐⭐⭐';
+    fb = '推理能力不错！少数几个地方可以再回头看看参考答案，下次就能拿到金牌。';
+  } else if (state.score >= 10) {
+    rankName = '🥉 铜牌侦探';
+    stars = '⭐⭐⭐';
+    fb = '基础功已经具备。重点加强"因为……所以……"的原因推理，下次再挑战！';
+  } else {
+    rankName = '🔰 见习侦探';
+    stars = '⭐⭐';
+    fb = '你完成了第一次调查！回头再读一次短文，多看几遍参考答案，下一次一定进步。';
+  }
+  document.getElementById('vStars').textContent = stars;
+  document.getElementById('vRank').textContent = rankName;
+  document.getElementById('vFeedback').textContent = fb;
+  document.getElementById('vName').textContent = state.name || '你';
+
+  // 最终归档
+  persist({
+    completed: true,
+    rank: rankName,
+    stars,
+    completedAt: serverTimestamp()
+  });
+
+  v.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function restartGame() {
+  state = { currentCase: 0, currentStep: 0, score: 0, caseScore: 0, stepResults: [], started: false };
+  for (const k in multiState) delete multiState[k];
+  document.getElementById('victory').classList.remove('show');
+  document.getElementById('storyPanel').style.display = 'block';
+  document.getElementById('casePanel').style.display = 'block';
+  renderCase();
+  updateHUD();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ========================================================================
+// UI HELPERS
+// ========================================================================
+function updateHUD() {
+  document.getElementById('hudProgress').textContent = state.currentCase + (state.stepResults.every(r => r !== null && r !== undefined) && state.stepResults.length > 0 ? 1 : 0);
+  const done = state.score > 0 || state.currentCase > 0 ? state.currentCase : 0;
+  const totalDone = state.started ? state.currentCase + (isCaseDone() ? 1 : 0) : 0;
+  document.getElementById('hudProgress').textContent = Math.min(totalDone, 7);
+  document.getElementById('progressBar').style.width = (Math.min(totalDone, 7) / 7 * 100) + '%';
+  document.getElementById('hudScore').textContent = state.score;
+  let rank = RANKS[0].name;
+  for (const r of RANKS) if (state.score >= r.min) rank = r.name;
+  document.getElementById('hudRank').textContent = rank;
+}
+
+function isCaseDone() {
+  return state.stepResults.length > 0 && state.stepResults.every(r => r !== null);
+}
+
+function highlightStory(pId) {
+  const p = document.getElementById(pId);
+  if (!p) return;
+  const clues = p.querySelectorAll('.clue-word');
+  clues.forEach(c => {
+    c.classList.remove('highlight-evidence');
+    void c.offsetWidth;
+    c.classList.add('highlight-evidence');
+  });
+  // also gentle flash on paragraph
+  p.style.background = '#fff3d6';
+  setTimeout(() => { p.style.background = ''; p.style.transition = 'background 0.8s ease'; }, 100);
+  setTimeout(() => { p.style.background = ''; }, 1600);
+  p.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function floatXP(text) {
+  const xp = document.createElement('div');
+  xp.className = 'xp-float';
+  xp.textContent = text;
+  const x = 30 + Math.random() * (window.innerWidth - 200);
+  const y = window.innerHeight / 2;
+  xp.style.left = x + 'px';
+  xp.style.top = y + 'px';
+  document.body.appendChild(xp);
+  setTimeout(() => xp.remove(), 1400);
+}
+
+function closeHint() {
+  document.getElementById('hintModal').classList.remove('show');
+}
+
+// HTML onclick 调用的函数需要暴露到 window（因为用了 ES module 作用域）
+window.startGame = startGame;
+window.pickChoice = pickChoice;
+window.toggleMulti = toggleMulti;
+window.submitMulti = submitMulti;
+window.submitWord = submitWord;
+window.submitWrite = submitWrite;
+window.nextCase = nextCase;
+window.restartGame = restartGame;
+window.closeHint = closeHint;
+
+// 姓名框：按 Enter 也能开始
+document.getElementById('playerName').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') startGame();
+});
+document.getElementById('playerName').focus();
+
+// init
+updateHUD();
+</script>
+
+</body>
+</html>
