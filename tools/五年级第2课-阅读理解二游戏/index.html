@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>《模糊的世界》阅读理解闯关 · 五年级高华第2课</title>
+<style>
+:root{
+  --bg:#0f1730; --ink:#102a43; --panel:#ffffff;
+  --main:#6a5ae0; --main-dark:#4d3fc1; --accent:#ffb84d;
+  --ok:#3dd28a; --no:#ef5b5b; --soft:#f3f2ff; --line:#cfc9f5;
+  --gold:#f8c23f; --life:#e0476d;
+  --hl:#fff2a8;
+}
+*{box-sizing:border-box}
+html,body{margin:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:linear-gradient(160deg,#1b2360,#2a2a6e 60%,#4b2e83);color:var(--ink);min-height:100vh}
+body{padding:16px 12px 40px}
+
+/* ============ HUD ============ */
+.hud{max-width:980px;margin:0 auto 14px;background:rgba(255,255,255,.96);border-radius:16px;padding:12px 16px;display:grid;grid-template-columns:auto 1fr auto auto auto auto;gap:10px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+@media (max-width:720px){.hud{grid-template-columns:auto 1fr;row-gap:6px}}
+.mascot{font-size:30px;animation:wave 2s ease-in-out infinite}
+@keyframes wave{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+.title{font-weight:800;color:var(--main-dark);font-size:17px;line-height:1.2}
+.title small{display:block;font-weight:500;color:#666;font-size:12px;margin-top:2px}
+.hudbox{display:flex;align-items:center;gap:6px;background:var(--soft);border-radius:999px;padding:6px 12px;font-weight:700;font-size:14px;white-space:nowrap}
+.hudbox.gold{background:#fff5d9;color:#a37200}
+.hudbox.star{background:#ffe9d6;color:#c05a1a}
+.lifebar{position:relative;width:140px;height:14px;background:#eee;border-radius:999px;overflow:hidden}
+.lifefill{position:absolute;inset:0;width:100%;background:linear-gradient(90deg,#7cf2b5,#3dd28a);transition:width .4s}
+.lifefill.low{background:linear-gradient(90deg,#ffaf7a,var(--life))}
+.lifelbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#0a2a1a}
+
+/* ============ PROGRESS ============ */
+.progress{max-width:980px;margin:0 auto 14px;display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.node{background:rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:8px 4px;text-align:center;font-weight:700;font-size:13px;border:2px solid transparent;cursor:pointer;transition:all .2s}
+.node.current{background:var(--accent);color:#3b2a00;border-color:#fff;transform:translateY(-2px)}
+.node.done{background:var(--ok);color:#fff}
+.node.locked{opacity:.4;cursor:not-allowed}
+
+/* ============ MAIN LAYOUT ============ */
+.main{max-width:980px;margin:0 auto;display:grid;grid-template-columns:1.1fr 1fr;gap:14px}
+@media (max-width:820px){.main{grid-template-columns:1fr}}
+.card{background:var(--panel);border-radius:16px;padding:16px 18px;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.card h2{margin:0 0 8px;color:var(--main-dark);font-size:18px}
+.card h3{margin:10px 0 6px;font-size:15px;color:#444}
+
+/* ============ STORY ============ */
+.story{max-height:70vh;overflow-y:auto;padding-right:8px;line-height:2.1;font-size:15.5px}
+.story p{margin:0 0 10px;text-indent:2em}
+.story p.title{text-align:center;text-indent:0;font-weight:800;color:var(--main-dark);font-size:18px;margin-bottom:6px}
+.py{position:relative;border-bottom:1.5px dotted var(--main);cursor:help;padding:0 1px}
+.py:hover,.py.active{background:var(--hl);border-radius:4px}
+.py::after{
+  content:attr(data-py) "　" attr(data-m);
+  position:absolute;bottom:130%;left:50%;transform:translateX(-50%);
+  background:#2a2a6e;color:#fff;padding:5px 10px;border-radius:8px;font-size:13px;
+  white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;
+  box-shadow:0 4px 10px rgba(0,0,0,.3);z-index:10;
+}
+.py:hover::after,.py.active::after{opacity:1}
+.hl-para{background:#fff9c4;border-radius:6px;padding:4px 6px;animation:flash 1.2s ease}
+@keyframes flash{0%{background:#fff176}100%{background:#fff9c4}}
+
+/* ============ QUESTION ============ */
+.qhead{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.qnum{background:var(--main);color:#fff;padding:3px 10px;border-radius:999px;font-weight:700;font-size:13px}
+.points{background:#ffe;color:#7a5a00;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.qtext{font-weight:700;font-size:16px;line-height:1.5;margin:4px 0 10px}
+
+.toolbtns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tbtn{padding:6px 10px;border-radius:999px;border:0;background:var(--soft);color:var(--main-dark);font-size:13px;font-weight:700;cursor:pointer}
+.tbtn:hover{background:var(--line)}
+.tbtn.warn{background:#ffece4;color:#c25a1a}
+
+.hintbox{background:#fffbe8;border-left:4px solid var(--accent);padding:10px 12px;border-radius:8px;margin-bottom:10px;font-size:14px;display:none}
+.hintbox.show{display:block}
+.hintbox b{color:#a37200}
+.refbox{background:#eaf7ef;border-left:4px solid var(--ok);padding:10px 12px;border-radius:8px;margin-bottom:10px;font-size:14px;display:none}
+.refbox.show{display:block}
+
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:520px){.choices{grid-template-columns:1fr}}
+.choice{padding:10px 12px;border:2px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;text-align:left;font-size:14.5px;transition:all .15s}
+.choice:hover{border-color:var(--main)}
+.choice.sel{background:#f3f2ff;border-color:var(--main)}
+.choice.correct{background:#d9f5e6;border-color:var(--ok);color:#0e6b3d}
+.choice.wrong{background:#fde0e0;border-color:var(--no);color:#8a2020}
+.choice.disabled{cursor:not-allowed;opacity:.85}
+
+.frame{background:#f7f6ff;border-radius:10px;padding:10px 12px;margin:8px 0;line-height:2.1;font-size:15px}
+.blank{display:inline-block;min-width:120px;padding:2px 10px;background:#fff;border-bottom:3px solid var(--main);border-radius:4px;text-align:center;font-weight:700;color:var(--main-dark);cursor:pointer;margin:0 2px}
+.blank.filled{background:#e8e4ff}
+.blank.correct{background:#d9f5e6;border-color:var(--ok);color:#0e6b3d}
+.blank.wrong{background:#fde0e0;border-color:var(--no);color:#8a2020}
+.wbank{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.wbtn{padding:6px 12px;background:#fff;border:2px solid var(--line);border-radius:999px;font-weight:700;cursor:pointer;font-size:14px}
+.wbtn:hover{border-color:var(--main)}
+.wbtn.used{opacity:.3;cursor:not-allowed}
+.wbtn.sel{outline:3px solid var(--accent)}
+
+.radio-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.radio{padding:8px 14px;border:2px solid var(--line);border-radius:10px;cursor:pointer;background:#fff;font-weight:700}
+.radio.sel{background:var(--accent);color:#3b2a00;border-color:var(--accent)}
+
+textarea,input.ti{width:100%;border:2px solid var(--line);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:15px;resize:vertical}
+textarea{min-height:50px}
+textarea:focus,input.ti:focus{outline:0;border-color:var(--main)}
+.tlabel{font-size:13px;color:#666;margin:6px 0 2px;font-weight:700}
+.kplist{margin:6px 0 0;padding-left:6px;list-style:none}
+.kplist li{margin:3px 0;font-size:14px;font-weight:600}
+.kplist li.hit{color:#0e6b3d}
+.kplist li.miss{color:#8a2020}
+
+.actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;justify-content:flex-end}
+.btn{padding:10px 20px;border:0;border-radius:10px;font-weight:800;cursor:pointer;font-size:15px}
+.btn.primary{background:var(--main);color:#fff}
+.btn.primary:hover{background:var(--main-dark)}
+.btn.ghost{background:#fff;color:var(--main-dark);border:2px solid var(--main)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.fb{margin-top:10px;padding:10px 12px;border-radius:10px;font-weight:700;display:none}
+.fb.show{display:block}
+.fb.ok{background:#d9f5e6;color:#0e6b3d;border:2px solid var(--ok)}
+.fb.no{background:#fde0e0;color:#8a2020;border:2px solid var(--no)}
+
+/* ============ VICTORY ============ */
+.victory{position:fixed;inset:0;background:rgba(10,10,40,.85);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.victory.show{display:flex}
+.cert{background:#fff8e7;border:8px double #c89d3a;border-radius:18px;padding:30px 24px;max-width:460px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:pop .5s ease}
+@keyframes pop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+.cert h1{margin:0 0 6px;color:#8b5a00;font-size:26px}
+.cert .medal{font-size:70px;margin:10px 0}
+.cert p{margin:6px 0;color:#5a4000;font-size:15px;line-height:1.6}
+.cert .stars{font-size:28px;color:var(--gold);margin:6px 0}
+
+/* floating +coin */
+.float{position:fixed;pointer-events:none;font-weight:800;font-size:22px;animation:flyup 1s ease-out forwards;z-index:50}
+@keyframes flyup{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+
+/* ============ mini-game overlay ============ */
+.miniBtn{cursor:pointer;background:linear-gradient(135deg,#ffb6d5,#ffdfa6)!important;color:#8a2a55!important;border:0;font-weight:800;animation:wobble 3s ease-in-out infinite}
+@keyframes wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+.miniOverlay{position:fixed;inset:0;background:rgba(10,10,40,.85);display:flex;align-items:center;justify-content:center;z-index:90;padding:16px}
+.miniCard{background:#fff;border-radius:18px;padding:20px;max-width:520px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.miniCard h2{margin:0 0 6px;color:var(--main-dark);text-align:center}
+.miniRule{color:#555;font-size:13.5px;text-align:center;margin:0 0 10px;line-height:1.6}
+.miniHud{display:flex;justify-content:space-around;background:#f3f2ff;border-radius:10px;padding:8px;font-size:14px;font-weight:700;margin-bottom:10px}
+.miniStage{position:relative;height:320px;background:linear-gradient(180deg,#d8eeff,#eaf6ff);border-radius:12px;overflow:hidden;border:2px solid var(--line)}
+.bubble{position:absolute;width:60px;height:60px;display:flex;align-items:center;justify-content:center;font-size:36px;border-radius:50%;background:#fff;box-shadow:0 4px 10px rgba(0,0,0,.2);cursor:pointer;animation:bubblepop 2.6s ease-out forwards;user-select:none}
+@keyframes bubblepop{
+  0%{transform:scale(0);opacity:0}
+  15%{transform:scale(1.15);opacity:1}
+  25%{transform:scale(1)}
+  90%{transform:scale(1);opacity:1}
+  100%{transform:scale(.6);opacity:0}
+}
+.bubble.clicked{animation:pop .25s ease forwards!important}
+@keyframes pop{0%{transform:scale(1)}100%{transform:scale(1.8);opacity:0}}
+.miniActions{display:flex;gap:10px;justify-content:center;margin-top:10px}
+.miniResult{text-align:center;padding:10px;margin-top:10px;background:#fff4d9;border-radius:10px;font-weight:700;display:none}
+.miniResult.show{display:block}
+
+/* floating bonus drift */
+.floatBonus{position:fixed;font-size:38px;cursor:pointer;z-index:40;user-select:none;filter:drop-shadow(0 4px 10px rgba(255,255,255,.5));animation:drift 9s linear forwards}
+@keyframes drift{
+  0%{transform:translateX(0) translateY(0) rotate(0);opacity:0}
+  8%{opacity:1}
+  100%{transform:translateX(calc(100vw + 60px)) translateY(-40px) rotate(360deg);opacity:0}
+}
+
+/* streak banner */
+.streak{position:fixed;top:30%;left:50%;transform:translateX(-50%);font-size:44px;font-weight:900;color:#ffb84d;text-shadow:0 4px 14px rgba(0,0,0,.6),0 0 20px #ffb84d;pointer-events:none;z-index:80;animation:streakpop 1.3s ease forwards;white-space:nowrap}
+@keyframes streakpop{
+  0%{transform:translate(-50%,10px) scale(.3);opacity:0}
+  30%{transform:translate(-50%,0) scale(1.3);opacity:1}
+  70%{transform:translate(-50%,0) scale(1);opacity:1}
+  100%{transform:translate(-50%,-30px) scale(1);opacity:0}
+}
+</style>
+</head>
+<body>
+
+<!-- HUD -->
+<div class="hud">
+  <div class="mascot" title="小眼睛陪你闯关！">👁️</div>
+  <div class="title">《模糊的世界》阅读理解闯关
+    <small>五年级高华 第2课 · 每关都有 📍定位 💡提示 👀答案 支架</small>
+  </div>
+  <button class="hudbox miniBtn" id="miniBtn" title="玩一局护眼小游戏">🎮 小游戏</button>
+  <div class="hudbox gold">🪙 <span id="coin">0</span></div>
+  <div class="hudbox star">⭐ <span id="star">0</span>/9</div>
+  <div class="hudbox">
+    <span style="font-size:13px">视力</span>
+    <div class="lifebar"><div class="lifefill" id="lifefill"></div><div class="lifelbl" id="lifelbl">100</div></div>
+  </div>
+</div>
+
+<!-- Progress -->
+<div class="progress" id="nodes"></div>
+
+<!-- Main -->
+<div class="main">
+  <div class="card">
+    <h2>📖 短文</h2>
+    <div class="story" id="story"></div>
+  </div>
+
+  <div class="card">
+    <div id="qbody"></div>
+  </div>
+</div>
+
+<!-- Victory modal -->
+<div class="victory" id="victory">
+  <div class="cert">
+    <h1>🏆 护眼小英雄</h1>
+    <div class="medal" id="medal">🥇</div>
+    <p id="certLine">恭喜你完成《模糊的世界》阅读理解闯关！</p>
+    <div class="stars" id="certStars">⭐⭐⭐⭐⭐⭐⭐</div>
+    <p>🪙 金币：<b id="certCoin">0</b>　·　👁️ 最终视力：<b id="certLife">100</b></p>
+    <p id="certRank" style="font-size:18px;font-weight:800;color:#8b5a00;margin-top:10px"></p>
+    <button class="btn primary" onclick="document.getElementById('victory').classList.remove('show')">继续欣赏</button>
+    <button class="btn ghost" onclick="location.reload()" style="margin-left:8px">重新挑战</button>
+  </div>
+</div>
+
+<script>
+/* ============ 难词拼音词典 ============ */
+const DICT = {
+  '模糊':['mó hu','看不清楚'],
+  '目不转睛':['mù bù zhuǎn jīng','一直盯着看'],
+  '屏幕':['píng mù','电脑、手机的画面'],
+  '三更半夜':['sān gēng bàn yè','深夜'],
+  '无精打采':['wú jīng dǎ cǎi','没有精神'],
+  '打哈欠':['dǎ hā qian','想睡觉时张嘴吐气'],
+  '黑板':['hēi bǎn','教室里写字的板'],
+  '咳嗽':['ké sou','喉咙发出声音'],
+  '组屋':['zǔ wū','政府组屋'],
+  '诊所':['zhěn suǒ','看病的地方'],
+  '常客':['cháng kè','经常去的人'],
+  '巴刹':['bā shā','菜市场'],
+  '挣脱':['zhèng tuō','用力把手甩开'],
+  '摩托车':['mó tuō chē','motorbike'],
+  '刹住':['shā zhù','紧急停下'],
+  '愣':['lèng','呆住、反应不过来'],
+  '冰凉':['bīng liáng','非常冷'],
+  '皱着眉头':['zhòu zhe méi tóu','眉毛皱起来，表情不高兴'],
+  '度数':['dù shù','近视的深浅'],
+  '视力':['shì lì','眼睛看东西的能力'],
+  '下降':['xià jiàng','变差、变低'],
+  '翻开':['fān kāi','打开书本'],
+  '跳动':['tiào dòng','不停地动'],
+  '抛':['pāo','扔出去'],
+  '抽屉':['chōu ti','桌子的格子'],
+  '复查':['fù chá','再检查一次'],
+  '稳定':['wěn dìng','不变动'],
+  '清清楚楚':['qīng qīng chǔ chǔ','非常清楚'],
+  '上瘾':['shàng yǐn','停不下来，离不开'],
+};
+
+/* ============ 短文（按段落） ============ */
+const STORY = [
+  {title:true, text:'模糊的世界'},
+  {id:'p1', text:'志强最近迷上了一款手机游戏。从学校回到家，他一放下书包，就窝在沙发上，目不转睛地盯着屏幕。妈妈劝他休息，他嘴上答应，手指却不肯停。晚上，他关了灯躲在被窝里继续玩，常常玩到三更半夜。'},
+  {id:'p2', text:'才过了三个月，他整天无精打采，上课不停地打哈欠，功课也越做越差。更糟糕的是，他看黑板上的字越来越模糊，一读书就头疼、咳嗽，成了组屋楼下那家诊所的常客。'},
+  {id:'p3', text:'这个周六早上，妈妈让志强带七岁的妹妹佳佳到楼下的巴刹买水果。志强一手牵着佳佳，一手还在划手机。走到巴刹前的马路边，佳佳忽然挣脱他的手，跑向对面一只小猫。一辆摩托车"呼"地一下从前方冲了过来——'},
+  {id:'p4', text:'"佳佳！"志强猛地抬头，眼前一片模糊，只看见一个灰影从妹妹身边擦过。他的手在发抖，手机"啪"地一声掉在地上。还好，摩托车及时刹住了，佳佳吓得哇哇大哭。'},
+  {id:'p5', text:'志强愣在原地，半天说不出话。回家的路上，妈妈一句话也没说，只是紧紧地握着他的手。那只手冰凉冰凉的。'},
+  {id:'p6', text:'下午，妈妈带志强去陈医生的诊所。陈医生看过他的眼睛，皱着眉头说："度数又加深了。再这样下去，视力还会继续下降。"回家时，妈妈把他的手机轻轻地放在桌上，说："你自己决定吧。"'},
+  {id:'p7', text:'那天晚上，志强坐在书桌前，翻开课本，书上的字一个个都在跳动。他想起佳佳那声哭喊，想起妈妈冰凉的手，心里一阵痛苦。他站起来，走到客厅，把手机抛进抽屉，"咔"地一声锁上。'},
+  {id:'p8', text:'从那天起，志强每天只在做完功课后玩二十分钟电脑，一到九点就上床睡觉。每个星期六，他都陪佳佳到公园跑步。几个月后，他再去找陈医生复查时，陈医生笑着说："视力稳定了，你终于听进去了。"志强转过头，看见妈妈正站在诊所门口，对着他轻轻地笑。'},
+  {id:'p9', text:'那一刻，他眼中的世界，清清楚楚。'}
+];
+
+function annotate(text){
+  // 按词长降序，避免短词先被切
+  const keys = Object.keys(DICT).sort((a,b)=>b.length-a.length);
+  let out = text;
+  keys.forEach(w=>{
+    const re = new RegExp(w,'g');
+    out = out.replace(re, `<span class="py" data-py="${DICT[w][0]}" data-m="${DICT[w][1]}">${w}</span>`);
+  });
+  return out;
+}
+function renderStory(){
+  const box = document.getElementById('story');
+  box.innerHTML = STORY.map(p=>{
+    if(p.title) return `<p class="title">${p.text}</p>`;
+    return `<p id="${p.id}">${annotate(p.text)}</p>`;
+  }).join('');
+  // 手机点击 toggle
+  box.querySelectorAll('.py').forEach(el=>{
+    el.addEventListener('click',()=>{
+      box.querySelectorAll('.py').forEach(x=>{ if(x!==el) x.classList.remove('active');});
+      el.classList.toggle('active');
+    });
+  });
+}
+renderStory();
+
+function highlightPara(id){
+  const p = document.getElementById(id);
+  if(!p) return;
+  p.classList.remove('hl-para'); void p.offsetWidth;
+  p.classList.add('hl-para');
+  p.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ============ 游戏状态 ============ */
+const state = { coin:0, star:0, life:100, level:0, stars:[] };
+
+function updHud(){
+  document.getElementById('coin').textContent = state.coin;
+  document.getElementById('star').textContent = state.star;
+  const lf = document.getElementById('lifefill');
+  lf.style.width = Math.max(0,state.life)+'%';
+  lf.classList.toggle('low', state.life<40);
+  document.getElementById('lifelbl').textContent = Math.max(0,state.life);
+}
+function addCoin(n,ev){
+  state.coin += n; updHud();
+  if(ev){
+    const f = document.createElement('div');
+    f.className='float'; f.textContent = (n>0?'+':'')+n+' 🪙';
+    f.style.color = n>0?'#f8c23f':'#ef5b5b';
+    f.style.left = (ev.clientX||window.innerWidth/2)+'px';
+    f.style.top = (ev.clientY||100)+'px';
+    document.body.appendChild(f);
+    setTimeout(()=>f.remove(),1000);
+  }
+}
+function addLife(n){ state.life = Math.max(0,Math.min(100,state.life+n)); updHud(); }
+
+/* ============ 题目数据（全部是输入题） ============ */
+const LEVELS = [
+  { id:'1', points:2, para:'p2',
+    type:'exact',
+    q:'文中表示"经常去某个地方的人"的词语是：',
+    placeholder:'请填写文中的词语……',
+    answer:'常客',
+    hint:'看第②段最后一句——"成了组屋楼下那家诊所的……"后面是哪个词？'
+  },
+  { id:'2', points:2, para:'p7',
+    type:'exact',
+    q:'文中表示"把东西用力扔出去"的词语是：',
+    placeholder:'请填写文中的词语……',
+    answer:'抛',
+    hint:'看第⑦段——"把手机___进抽屉"，是哪一个动作？'
+  },
+  { id:'🎮', points:0, type:'minigame', subtype:'blink',
+    title:'🌿 眼保健操休息时间',
+    desc:'做了两道题，眨眨眼放松一下～<br>15 秒内尽量点击出现的 👁️，每点一次 <b>+3 🪙</b> 金币 · 视力 <b>+1</b>。',
+    duration:15, spawnMs:500,
+    pool:[{e:'👁️',coin:3,life:1,good:true}]
+  },
+  { id:'3', points:3, para:'p2',
+    type:'input', rows:5,
+    q:'自从迷上手机游戏后，志强的身体和生活出现了什么变化？（请写出三个变化）',
+    placeholder:'请按顺序写出三个方面的变化……',
+    hint:'从①②段找线索：晚上怎么做？上课和功课怎样？眼睛和身体怎样？',
+    keyPoints:[
+      {label:'① 玩到三更半夜 / 熬夜玩游戏', any:['三更半夜','半夜','深夜','熬夜','到很晚','很晚','整晚']},
+      {label:'② 无精打采 / 功课越做越差', any:['无精打采','没精神','打哈欠','功课','成绩','作业']},
+      {label:'③ 看字模糊、头疼咳嗽、成了诊所常客', any:['模糊','看不清','头疼','咳嗽','诊所','常客','生病']},
+    ]
+  },
+  { id:'4', points:4, para:'p4',
+    type:'twoInput',
+    q:'佳佳冲向马路对面的一刻，志强有什么反应？他为什么会有这样的反应？',
+    hint:'看第④⑤段：志强的动作和神态（2分）；再想一想：他为什么会看不清路况？他刚刚差点失去妹妹，会有什么感受？（2分）',
+    part1:{ label:'① 反应（2分）：', rows:3, placeholder:'请写出志强当时的动作和神态……',
+      keyPoints:[
+        {label:'猛地抬头 / 发抖 / 掉手机 等具体动作', any:['抬头','发抖','抖','掉']},
+        {label:'愣住 / 说不出话', any:['愣','呆','说不出']},
+      ]},
+    part2:{ label:'② 原因（2分）：', rows:3, placeholder:'请说明为什么他会有这样的反应……',
+      keyPoints:[
+        {label:'视力已下降，看不清路况', any:['视力','看不清','模糊','眼睛']},
+        {label:'惊慌 / 害怕 / 自责', any:['惊慌','害怕','吓','自责','紧张']},
+      ]}
+  },
+  { id:'5', points:4, para:'p5',
+    type:'twoInput',
+    q:'回家的路上，妈妈"紧紧地握着"志强的手——妈妈这样做表示什么？那只手"冰凉冰凉的"，又说明了什么？',
+    hint:'妈妈一路"一句话也没说"，她不是在责骂，用的是什么方式？（2分）人在极度害怕时身体会怎样？妈妈刚刚经历了什么惊吓？（2分）',
+    part1:{ label:'① "紧紧地握着" 表示什么（2分）：', rows:3, placeholder:'请说明妈妈这个动作想表达什么……',
+      keyPoints:[
+        {label:'妈妈没有开口责骂 / 用动作代替说话', any:['没有骂','没责骂','没开口','没说','无声','不责骂','没骂','用动作']},
+        {label:'让志强记住这次教训 / 担心', any:['教训','记住','提醒','担心']},
+      ]},
+    part2:{ label:'② "冰凉冰凉的" 说明什么（2分）：', rows:3, placeholder:'请说明为什么妈妈的手是冰凉的……',
+      keyPoints:[
+        {label:'妈妈非常害怕 / 受到极大惊吓', any:['害怕','惊','吓','惊吓']},
+        {label:'差点失去佳佳，还没恢复过来', any:['佳佳','妹妹','失去','没恢复','没有恢复','还没']},
+      ]}
+  },
+  { id:'🎮', points:0, type:'minigame', subtype:'trap',
+    title:'🏠 收拾房间大作战',
+    desc:'冲最后两关前再玩一局！<br>20 秒内点 📚 🍎 🌳 加分，<b style="color:#e05656">千万别点 📱 💻</b>（扣视力）。',
+    duration:20, spawnMs:450,
+    pool:[
+      {e:'📚',coin:5,life:2,good:true},
+      {e:'🍎',coin:5,life:3,good:true},
+      {e:'🌳',coin:6,life:2,good:true},
+      {e:'📱',coin:-5,life:-5,good:false},
+      {e:'💻',coin:-5,life:-5,good:false},
+    ]
+  },
+  { id:'6', points:4, para:'p7',
+    type:'input', rows:5,
+    q:'那天晚上，志强走到客厅把手机抛进抽屉，为什么他心里感到一阵痛苦？',
+    placeholder:'请联系短文内容完整说明……',
+    hint:'他想起了谁的什么声音？又想起了谁那只什么样的手？他意识到自己做错了什么？',
+    keyPoints:[
+      {label:'想起佳佳的哭喊 / 差点害妹妹出事', any:['佳佳','妹妹','哭喊','哭','撞','出事']},
+      {label:'想起妈妈冰凉的手', any:['妈妈','冰凉','冰','凉']},
+      {label:'意识到自己沉迷手机 / 坏习惯伤害了眼睛 / 让家人担心', any:['沉迷','手机','坏习惯','伤害','眼睛','担心','视力']},
+      {label:'因此感到自责 / 痛苦', any:['自责','后悔','难过','痛苦','内疚']},
+    ]
+  },
+  { id:'7', points:4, para:'p8',
+    type:'opinion',
+    q:'志强把手机锁进抽屉，规定自己每天只玩二十分钟电脑。你赞成他的做法吗？请结合短文说明理由。在生活中，如果你也对某样东西上瘾（例如电视、手机、漫画），你会怎么做？',
+    hint:'• 先写清楚立场（"赞成"或"不赞成"）。\n• 理由要结合志强的视力、健康或妹妹的事情。\n• 生活迁移要包含三层：触发场景 → 具体行动 → 结果。',
+    fields:[
+      { id:'stance', label:'① 你的立场（1分）：', rows:1, placeholder:'请写"赞成"或"不赞成"',
+        must:['赞成','不赞成'] },
+      { id:'reason', label:'② 结合短文说明理由（1分）：', rows:3, placeholder:'请从短文里找到一到两条最有说服力的理由……',
+        keyPoints:[
+          {label:'提到视力下降 / 身体变差', any:['视力','下降','身体','健康']},
+          {label:'提到差点害妹妹出事', any:['妹妹','佳佳','撞','出事','危险']},
+          {label:'提到限制时间能改掉坏习惯 / 保护健康', any:['限制','坏习惯','保护','改','控制']},
+        ], needHits:1 },
+      { id:'self', label:'③ 生活迁移（2分，需包含：触发场景 + 具体行动 + 结果）：', rows:5, placeholder:'例如：我发现自己一有空就想看卡通片（场景），我会把遥控器交给妈妈保管（行动），这样就不会熬夜影响视力（结果）。',
+        keyPoints:[
+          {label:'触发场景：什么时候/什么情况会上瘾', any:['时候','一有空','放学','回家','无聊','想看','想玩','经常','空']},
+          {label:'具体行动：你打算怎么做（交给家人 / 限制 / 锁 / 规定）', any:['交给','保管','限制','锁','规定','只','不超过','控制']},
+          {label:'结果：带来什么好处（学习 / 健康 / 视力 / 睡眠）', any:['学习','专心','健康','视力','睡眠','不熬夜','进步']},
+        ]},
+    ]
+  }
+];
+
+/* ============ 渲染节点进度 ============ */
+function renderNodes(){
+  const box = document.getElementById('nodes');
+  box.innerHTML = LEVELS.map((L,i)=>{
+    let cls='node';
+    if(i===state.level) cls+=' current';
+    else if(state.stars[i]) cls+=' done';
+    else if(i>state.level) cls+=' locked';
+    return `<div class="${cls}" data-i="${i}">${L.id}${state.stars[i]?' ✓':''}</div>`;
+  }).join('');
+  box.querySelectorAll('.node').forEach(n=>{
+    n.onclick = ()=>{
+      const i=+n.dataset.i;
+      if(i<=state.level || state.stars[i]){ state.level=i; renderAll(); }
+    };
+  });
+}
+
+/* ============ 支架按钮栏 ============ */
+function toolBar(L){
+  return `<div class="toolbtns">
+    <button class="tbtn" onclick="highlightPara('${L.para}')">📍 定位原文</button>
+    <button class="tbtn" onclick="document.getElementById('hintbox').classList.toggle('show')">💡 提示</button>
+  </div>
+  <div class="hintbox" id="hintbox"><b>小眼睛提示：</b><br>${L.hint.replace(/\n/g,'<br>')}</div>`;
+}
+
+/* ============ 渲染当前题 ============ */
+function inputEl(id, rows, placeholder){
+  if(rows===1) return `<input id="${id}" class="ti" placeholder="${placeholder||''}"/>`;
+  return `<textarea id="${id}" rows="${rows||4}" placeholder="${placeholder||''}"></textarea>`;
+}
+
+function renderQ(){
+  const L = LEVELS[state.level];
+  let html = `<div class="qhead">
+    <span class="qnum">${L.id}</span>
+    <span class="points">${L.points}分</span>
+  </div>
+  <div class="qtext">${L.q}</div>
+  ${toolBar(L)}`;
+
+  if(L.type==='minigame'){
+    document.getElementById('qbody').innerHTML = `
+      <div class="qhead"><span class="qnum">🎮 休闲关</span></div>
+      <h2 style="margin:0 0 6px;color:var(--main-dark)">${L.title}</h2>
+      <div style="font-size:14px;color:#555;margin-bottom:10px;line-height:1.7">${L.desc}</div>
+      <div class="miniHud">
+        <span>⏰ <b id="miT">${L.duration}</b> 秒</span>
+        <span>🪙 本关 <b id="miC">0</b></span>
+        <span>👁️ 视力 <b id="miL">0</b></span>
+      </div>
+      <div class="miniStage" id="miStage"></div>
+      <div class="miniResult" id="miR"></div>
+      <div class="actions">
+        <button class="btn ghost" id="startMini">开始挑战</button>
+        <button class="btn primary" id="nextBtn" disabled>下一关 ▶</button>
+      </div>`;
+    document.getElementById('startMini').onclick = ()=>runInlineMini(L);
+    return;
+  }
+  if(L.type==='exact'){
+    html += inputEl('ans', 1, L.placeholder);
+  }
+  else if(L.type==='input'){
+    html += inputEl('ans', L.rows, L.placeholder);
+  }
+  else if(L.type==='twoInput'){
+    html += `<h3>${L.part1.label}</h3>${inputEl('ans1', L.part1.rows, L.part1.placeholder)}
+             <h3>${L.part2.label}</h3>${inputEl('ans2', L.part2.rows, L.part2.placeholder)}`;
+  }
+  else if(L.type==='opinion'){
+    L.fields.forEach(f=>{
+      html += `<h3>${f.label}</h3>${inputEl(f.id, f.rows, f.placeholder)}`;
+    });
+  }
+
+  html += `<div class="fb" id="fb"></div>
+    <div class="actions">
+      <button class="btn ghost" id="checkBtn">提交作答</button>
+      <button class="btn primary" id="nextBtn" disabled>${state.level===LEVELS.length-1?'完成闯关 🏆':'下一关 ▶'}</button>
+    </div>`;
+
+  document.getElementById('qbody').innerHTML = html;
+  bindHandlers(L);
+}
+
+/* ============ 关键词评分 ============ */
+function scoreText(text, keyPoints){
+  const t = (text||'').trim();
+  const hit=[], miss=[];
+  keyPoints.forEach(kp=>{
+    const got = kp.any.some(k=>t.includes(k));
+    (got?hit:miss).push(kp);
+  });
+  return {hit, miss, ok:miss.length===0};
+}
+function kpHtml(r){
+  const h = r.hit.map(k=>`<li class="hit">✓ ${k.label}</li>`).join('');
+  const m = r.miss.map(k=>`<li class="miss">✗ ${k.label}</li>`).join('');
+  return `<ul class="kplist">${h}${m}</ul>`;
+}
+function getVal(id){ return (document.getElementById(id).value||'').trim(); }
+
+/* ============ 事件绑定 ============ */
+function bindHandlers(L){
+  const btn = document.getElementById('checkBtn');
+
+  if(L.type==='exact'){
+    btn.onclick = (ev)=>{
+      const t = getVal('ans');
+      if(!t){ feedback(false,'请先写出你的答案～'); return; }
+      if(t.includes(L.answer)){
+        feedback(true, `正确！文中的词是「${L.answer}」。`);
+        awardStar(ev);
+      }else{
+        feedback(false, `还不对哦，再读读原文找找看，只写一个词语即可。`);
+        addLife(-5); updHud();
+      }
+    };
+  }
+  else if(L.type==='input'){
+    btn.onclick = (ev)=>{
+      const t = getVal('ans');
+      if(t.length<5){ feedback(false,'请写出你的完整答案（至少一句话）。'); return; }
+      const r = scoreText(t, L.keyPoints);
+      if(r.ok){
+        feedback(true, `答题要点齐全！🎉${kpHtml(r)}`);
+        awardStar(ev, state.level===LEVELS.length-1);
+      }else{
+        feedback(false, `你答对了 ${r.hit.length} / ${L.keyPoints.length} 个要点，还缺 ${r.miss.length} 点：${kpHtml(r)}`);
+        addLife(-5); updHud();
+      }
+    };
+  }
+  else if(L.type==='twoInput'){
+    btn.onclick = (ev)=>{
+      const t1 = getVal('ans1'), t2 = getVal('ans2');
+      if(t1.length<3 || t2.length<3){ feedback(false,'两部分都要写答案哦～'); return; }
+      const r1 = scoreText(t1, L.part1.keyPoints);
+      const r2 = scoreText(t2, L.part2.keyPoints);
+      const total = L.part1.keyPoints.length + L.part2.keyPoints.length;
+      const got = r1.hit.length + r2.hit.length;
+      if(r1.ok && r2.ok){
+        feedback(true, `两部分都完整！🎉<br><b>① 反应</b>${kpHtml(r1)}<b>② 原因</b>${kpHtml(r2)}`);
+        awardStar(ev);
+      }else{
+        feedback(false, `答对 ${got} / ${total} 个要点：<br><b>① </b>${kpHtml(r1)}<b>② </b>${kpHtml(r2)}`);
+        addLife(-5); updHud();
+      }
+    };
+  }
+  else if(L.type==='opinion'){
+    btn.onclick = (ev)=>{
+      const problems=[], reports=[];
+      let allOk = true;
+
+      L.fields.forEach(f=>{
+        const t = getVal(f.id);
+        if(f.must){
+          if(!t){ allOk=false; problems.push(`${f.label} 还没填。`); return; }
+          const ok = f.must.some(m=>t.includes(m));
+          if(!ok){ allOk=false; problems.push(`${f.label} 请明确写"赞成"或"不赞成"。`); }
+        } else if(f.keyPoints){
+          if(t.length<5){ allOk=false; problems.push(`${f.label} 还需要多写一点（至少一句话）。`); return; }
+          const r = scoreText(t, f.keyPoints);
+          const need = f.needHits || f.keyPoints.length;
+          reports.push(`<b>${f.label}</b>${kpHtml(r)}`);
+          if(r.hit.length < need){
+            allOk=false;
+            problems.push(`${f.label} 至少要命中 ${need} 个要点（目前 ${r.hit.length}）。`);
+          }
+        }
+      });
+
+      if(allOk){
+        feedback(true, `立场、理由、生活迁移全部完成！最终闯关成功！🏆<br>${reports.join('')}`);
+        awardStar(ev, true);
+      }else{
+        feedback(false, `还差一点：<br>• ${problems.join('<br>• ')}${reports.length?'<br>'+reports.join(''):''}`);
+        addLife(-5); updHud();
+      }
+    };
+  }
+}
+
+/* ============ 反馈 & 通关 ============ */
+function feedback(ok,msg){
+  const fb = document.getElementById('fb');
+  fb.className = 'fb show '+(ok?'ok':'no');
+  fb.innerHTML = msg;
+}
+function awardStar(ev, final){
+  if(state.stars[state.level]) return;
+  state.stars[state.level] = true;
+  state.star++;
+  const coins = LEVELS[state.level].points * 10;
+  addCoin(coins,ev);
+  addLife(+5);
+  updHud();
+  document.getElementById('nextBtn').disabled = false;
+  document.getElementById('nextBtn').onclick = ()=>{
+    if(state.level<LEVELS.length-1){ state.level++; renderAll(); }
+    else{ showVictory(); }
+  };
+  renderNodes();
+  if(final) setTimeout(showVictory,600);
+}
+
+function showVictory(){
+  document.getElementById('certCoin').textContent = state.coin;
+  document.getElementById('certLife').textContent = Math.max(0,state.life);
+  document.getElementById('certStars').textContent = '⭐'.repeat(state.star);
+  let rank='',medal='🥇';
+  if(state.life>=85){rank='✨ 金牌护眼小英雄 ✨';medal='🥇';}
+  else if(state.life>=60){rank='🌟 银牌阅读小达人 🌟';medal='🥈';}
+  else{rank='💪 铜牌闯关者（再挑战一次会更好！）';medal='🥉';}
+  document.getElementById('medal').textContent = medal;
+  document.getElementById('certRank').textContent = rank;
+  document.getElementById('victory').classList.add('show');
+}
+
+/* ============ 护眼小游戏 ============ */
+document.getElementById('miniBtn').onclick = openMini;
+
+function openMini(){
+  const overlay = document.createElement('div');
+  overlay.className='miniOverlay';
+  overlay.innerHTML = `
+    <div class="miniCard">
+      <h2>🎮 护眼大作战</h2>
+      <p class="miniRule">20 秒内点击 👁️ 📚 🍎 🌳 加 🪙 金币 + 回视力<br>
+      千万 <b style="color:#e05656">别点 📱 💻</b>（扣视力！）</p>
+      <div class="miniHud">
+        <span>⏰ <b id="miT">20</b> 秒</span>
+        <span>🪙 本局 <b id="miC">0</b></span>
+        <span>👁️ 视力 <b id="miL">0</b></span>
+      </div>
+      <div class="miniStage" id="miStage"></div>
+      <div class="miniResult" id="miR"></div>
+      <div class="miniActions">
+        <button class="btn primary" id="miStart">开始挑战</button>
+        <button class="btn ghost" id="miClose">关闭</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const stage = overlay.querySelector('#miStage');
+  const TYPES = [
+    {e:'👁️',coin:8,life:3,good:true},
+    {e:'📚',coin:5,life:2,good:true},
+    {e:'🍎',coin:5,life:3,good:true},
+    {e:'🌳',coin:6,life:2,good:true},
+    {e:'📱',coin:-5,life:-8,good:false},
+    {e:'💻',coin:-5,life:-8,good:false},
+  ];
+  let timeLeft=20, coins=0, lifeGain=0, running=false, spawner, timer;
+  const upd=()=>{
+    overlay.querySelector('#miT').textContent=timeLeft;
+    overlay.querySelector('#miC').textContent=coins;
+    overlay.querySelector('#miL').textContent=(lifeGain>=0?'+':'')+lifeGain;
+  };
+  const spawn=()=>{
+    if(!running) return;
+    // 70% 好东西 30% 坏东西
+    const pool = Math.random()<0.7 ? TYPES.filter(t=>t.good) : TYPES.filter(t=>!t.good);
+    const t = pool[Math.floor(Math.random()*pool.length)];
+    const b = document.createElement('div');
+    b.className='bubble'; b.textContent=t.e;
+    b.style.left = Math.random()*(stage.clientWidth-70)+'px';
+    b.style.top = Math.random()*(stage.clientHeight-80)+10+'px';
+    b.onclick = (ev)=>{
+      if(b.dataset.done) return;
+      b.dataset.done='1';
+      coins += t.coin; lifeGain += t.life;
+      b.classList.add('clicked');
+      const fx = document.createElement('div');
+      fx.className='float';
+      fx.textContent = (t.coin>0?'+':'')+t.coin+' 🪙';
+      fx.style.color = t.good?'#f8c23f':'#ef5b5b';
+      fx.style.left = ev.clientX+'px';
+      fx.style.top = ev.clientY+'px';
+      document.body.appendChild(fx);
+      setTimeout(()=>fx.remove(),1000);
+      upd();
+      setTimeout(()=>b.remove(),260);
+    };
+    stage.appendChild(b);
+    setTimeout(()=>b.remove(),2700);
+  };
+  const stop=()=>{
+    running=false; clearInterval(spawner); clearInterval(timer);
+    stage.innerHTML='';
+    state.coin += coins; addLife(lifeGain); updHud();
+    const r = overlay.querySelector('#miR');
+    const msg = coins>=80 ? '🏆 太棒了！' : coins>=40 ? '👍 不错！' : coins>=0 ? '🙂 继续努力' : '😅 下次小心陷阱';
+    r.innerHTML = `🏁 结束！${msg}<br>获得 🪙 <b>${coins}</b> 金币，视力 <b>${lifeGain>=0?'+':''}${lifeGain}</b>`;
+    r.classList.add('show');
+    overlay.querySelector('#miStart').disabled=false;
+    overlay.querySelector('#miStart').textContent='再玩一局';
+  };
+  const start=()=>{
+    running=true; timeLeft=20; coins=0; lifeGain=0; upd();
+    overlay.querySelector('#miR').classList.remove('show');
+    stage.innerHTML='';
+    overlay.querySelector('#miStart').disabled=true;
+    spawner = setInterval(spawn, 450);
+    timer = setInterval(()=>{ timeLeft--; upd(); if(timeLeft<=0) stop(); },1000);
+  };
+  overlay.querySelector('#miStart').onclick = start;
+  overlay.querySelector('#miClose').onclick = ()=>{
+    running=false; clearInterval(spawner); clearInterval(timer);
+    overlay.remove();
+  };
+}
+
+/* ============ 闯关内嵌的休闲小游戏 ============ */
+function runInlineMini(L){
+  const stage = document.getElementById('miStage');
+  const tEl = document.getElementById('miT');
+  const cEl = document.getElementById('miC');
+  const lEl = document.getElementById('miL');
+  let timeLeft = L.duration, coins = 0, lifeGain = 0, running = true, sp, tm;
+  const upd = ()=>{
+    tEl.textContent = timeLeft;
+    cEl.textContent = coins;
+    lEl.textContent = (lifeGain>=0?'+':'')+lifeGain;
+  };
+  upd();
+  stage.innerHTML = '';
+  document.getElementById('miR').classList.remove('show');
+  document.getElementById('startMini').disabled = true;
+  document.getElementById('startMini').textContent = '进行中…';
+
+  const spawn = ()=>{
+    if(!running) return;
+    const typ = L.pool[Math.floor(Math.random()*L.pool.length)];
+    const b = document.createElement('div');
+    b.className = 'bubble'; b.textContent = typ.e;
+    b.style.left = Math.random()*(stage.clientWidth-70)+'px';
+    b.style.top = Math.random()*(stage.clientHeight-80)+10+'px';
+    b.onclick = (ev)=>{
+      if(b.dataset.done) return;
+      b.dataset.done='1';
+      coins += typ.coin; lifeGain += typ.life;
+      b.classList.add('clicked');
+      const fx = document.createElement('div');
+      fx.className='float';
+      fx.textContent = (typ.coin>0?'+':'')+typ.coin+' 🪙';
+      fx.style.color = typ.good?'#f8c23f':'#ef5b5b';
+      fx.style.left = ev.clientX+'px';
+      fx.style.top = ev.clientY+'px';
+      document.body.appendChild(fx);
+      setTimeout(()=>fx.remove(),1000);
+      upd();
+      setTimeout(()=>b.remove(),260);
+    };
+    stage.appendChild(b);
+    setTimeout(()=>b.remove(),2700);
+  };
+  sp = setInterval(spawn, L.spawnMs||500);
+  tm = setInterval(()=>{
+    timeLeft--; upd();
+    if(timeLeft<=0){
+      running = false; clearInterval(sp); clearInterval(tm);
+      stage.innerHTML = '';
+      state.coin += coins; addLife(lifeGain); updHud();
+      const r = document.getElementById('miR');
+      const msg = coins>=60 ? '🏆 太棒了！' : coins>=30 ? '👍 不错！' : coins>=0 ? '🙂 继续努力' : '😅 下次小心陷阱';
+      r.innerHTML = `🏁 ${msg}<br>获得 🪙 <b>${coins}</b> 金币，视力 <b>${lifeGain>=0?'+':''}${lifeGain}</b>`;
+      r.classList.add('show');
+      // 解锁下一关
+      if(!state.stars[state.level]){
+        state.stars[state.level] = true;
+        state.star++;
+      }
+      updHud(); renderNodes();
+      document.getElementById('nextBtn').disabled = false;
+      document.getElementById('nextBtn').onclick = ()=>{
+        if(state.level<LEVELS.length-1){ state.level++; renderAll(); }
+        else { showVictory(); }
+      };
+    }
+  }, 1000);
+}
+
+/* ============ 连击横幅 ============ */
+let comboCount = 0;
+function flashStreak(msg){
+  const s = document.createElement('div');
+  s.className='streak'; s.textContent=msg;
+  document.body.appendChild(s);
+  setTimeout(()=>s.remove(),1300);
+}
+const _origAward = awardStar;
+awardStar = function(ev, final){
+  const wasNew = !state.stars[state.level];
+  _origAward(ev, final);
+  if(wasNew){
+    comboCount++;
+    const msgs = ['', '⭐ 答对！', '🔥 连击 ×2！', '💥 三连击！', '🌟 四连击！', '🏆 五连击！', '👑 六连击！', '✨ 全连击神！'];
+    flashStreak(msgs[Math.min(comboCount, msgs.length-1)]);
+  }
+};
+
+/* ============ 启动 ============ */
+function renderAll(){ renderNodes(); renderQ(); updHud(); }
+renderAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>五年级第2课《给小主人的一封信》课文游戏</title>
+<style>
+  :root{
+    --bg:#fff8ef; --ink:#2b2b2b; --main:#ff8a5b; --main-dark:#e56b3d;
+    --ok:#59c17a; --no:#e05656; --soft:#fff0dc; --line:#f1c9a5;
+    --blue:#5ba4e0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+  body{min-height:100vh;padding:20px;}
+  header{text-align:center;margin-bottom:16px}
+  header h1{margin:0;font-size:24px;color:var(--main-dark)}
+  header p{margin:4px 0;color:#7b5a45}
+  .tabs{display:flex;justify-content:center;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+  .tab{padding:10px 18px;border-radius:999px;border:2px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;font-size:16px;font-weight:600}
+  .tab.active{background:var(--main);color:#fff;border-color:var(--main)}
+  .panel{max-width:900px;margin:0 auto;background:#fff;border-radius:16px;padding:22px;box-shadow:0 4px 12px rgba(0,0,0,.05);display:none}
+  .panel.active{display:block}
+  h2{color:var(--main-dark);margin:0 0 6px}
+  .hint{color:#7b5a45;margin-bottom:14px;font-size:14px}
+
+  /* 书信格式游戏 */
+  .letter-wrap{display:grid;grid-template-columns:1.3fr 1fr;gap:18px}
+  @media (max-width:720px){.letter-wrap{grid-template-columns:1fr}}
+  .letter{background:var(--soft);border:2px dashed var(--line);border-radius:12px;padding:18px;line-height:2}
+  .slot{display:inline-block;min-width:110px;min-height:34px;padding:2px 10px;margin:0 4px;background:#fff;border:2px dashed var(--main);border-radius:8px;vertical-align:middle;color:#b48560;text-align:center}
+  .slot.filled{border-style:solid;background:#ffe6d3;color:#2b2b2b;font-weight:700}
+  .slot.correct{background:#d6f3df;border-color:var(--ok);color:#1b6a37}
+  .slot.wrong{background:#fbd9d9;border-color:var(--no)}
+  .chips{display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start}
+  .chip{padding:8px 14px;border-radius:999px;background:var(--main);color:#fff;font-weight:700;cursor:grab;user-select:none;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+  .chip.used{opacity:.3;cursor:not-allowed}
+  .center{display:block;text-align:center}
+  .right{display:block;text-align:right}
+
+  /* 选择题 */
+  .q{background:var(--soft);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+  .q .stem{font-weight:700;margin-bottom:8px}
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  @media (max-width:560px){.opts{grid-template-columns:1fr}}
+  .opt{padding:10px 12px;border-radius:10px;border:2px solid var(--line);background:#fff;cursor:pointer;text-align:left}
+  .opt:hover{border-color:var(--main)}
+  .opt.correct{background:#d6f3df;border-color:var(--ok)}
+  .opt.wrong{background:#fbd9d9;border-color:var(--no)}
+  .opt.disabled{cursor:not-allowed}
+  .explain{margin-top:8px;padding:8px 10px;border-left:4px solid var(--blue);background:#eaf4fd;border-radius:6px;display:none;font-size:14px}
+  .explain.show{display:block}
+
+  .btn{padding:10px 18px;border-radius:10px;border:0;background:var(--main);color:#fff;font-weight:700;cursor:pointer;font-size:15px}
+  .btn.ghost{background:#fff;color:var(--main-dark);border:2px solid var(--main)}
+  .toolbar{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+  .score{text-align:center;font-size:18px;color:var(--main-dark);font-weight:700;margin-top:10px}
+  .star{color:#f4b942}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📬 五年级第2课《给小主人的一封信》</h1>
+  <p>学习目标：理解课文内容 · 认识书信的格式</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="format">① 书信格式 🎯</button>
+  <button class="tab" data-tab="comp">② 课文理解 📖</button>
+</div>
+
+<!-- ============ 游戏一：书信格式 ============ -->
+<section class="panel active" id="panel-format">
+  <h2>把正确的标签拖到书信的位置上</h2>
+  <p class="hint">拖拽右边的标签，放到信里对应的灰框。六个位置全答对就过关！</p>
+
+  <div class="letter-wrap">
+    <div class="letter" id="letter">
+      <div>
+        <span class="slot" data-answer="称呼">?</span>亲爱的小主人：
+      </div>
+      <div style="text-indent:2em">
+        <span class="slot" data-answer="问候语">?</span>你好！我是你的眼睛，你收到这封信时一定很吃惊吧？
+      </div>
+      <div style="text-indent:2em">
+        <span class="slot" data-answer="正文">?</span>以前，你很用心地照顾我……可是，自从你迷上了电脑游戏，我就惨了……爸爸妈妈劝告过你，老师批评过你……为了我们的明天，赶快改掉坏习惯吧！
+      </div>
+      <div class="center">
+        <span class="slot" data-answer="祝颂语">?</span>祝 你<br>健康快乐
+      </div>
+      <div class="right">
+        <span class="slot" data-answer="署名">?</span>你的眼睛
+      </div>
+      <div class="right">
+        <span class="slot" data-answer="日期">?</span>2019 年 2 月
+      </div>
+    </div>
+
+    <div>
+      <div class="chips" id="chips"></div>
+      <div class="toolbar">
+        <button class="btn" id="checkFormat">检查答案</button>
+        <button class="btn ghost" id="resetFormat">重来</button>
+      </div>
+      <div class="score" id="formatScore"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 游戏二：课文理解选择题 ============ -->
+<section class="panel" id="panel-comp">
+  <h2>读懂信里写了什么？</h2>
+  <p class="hint">每题只有一个最佳答案，点错会提示，加油！</p>
+  <div id="qlist"></div>
+  <div class="toolbar">
+    <button class="btn ghost" id="resetComp">再做一次</button>
+  </div>
+  <div class="score" id="compScore"></div>
+</section>
+
+<script>
+/* -------- Tabs -------- */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-'+t.dataset.tab).classList.add('active');
+  };
+});
+
+/* -------- Game 1: 书信格式 -------- */
+const LABELS = ['称呼','问候语','正文','祝颂语','署名','日期'];
+function shuffle(a){return a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);}
+
+function renderChips(){
+  const box = document.getElementById('chips');
+  box.innerHTML = '';
+  shuffle(LABELS).forEach(txt=>{
+    const c = document.createElement('div');
+    c.className = 'chip';
+    c.textContent = txt;
+    c.draggable = true;
+    c.dataset.label = txt;
+    c.addEventListener('dragstart',e=>{
+      e.dataTransfer.setData('text/plain',txt);
+      e.dataTransfer.setData('chipId',txt);
+    });
+    // tap-to-select fallback (touch)
+    c.addEventListener('click',()=>{
+      document.querySelectorAll('.chip').forEach(x=>x.style.outline='');
+      c.style.outline = '3px solid #ffd27a';
+      window._picked = txt;
+    });
+    box.appendChild(c);
+  });
+}
+function markChipUsed(label,used){
+  document.querySelectorAll('.chip').forEach(c=>{
+    if(c.dataset.label===label) c.classList.toggle('used',used);
+  });
+}
+
+document.querySelectorAll('.slot').forEach(s=>{
+  s.addEventListener('dragover',e=>e.preventDefault());
+  s.addEventListener('drop',e=>{
+    e.preventDefault();
+    const txt = e.dataTransfer.getData('text/plain');
+    placeLabel(s,txt);
+  });
+  s.addEventListener('click',()=>{
+    if(window._picked){ placeLabel(s,window._picked); window._picked=null;
+      document.querySelectorAll('.chip').forEach(x=>x.style.outline='');
+    }
+  });
+});
+function placeLabel(slot,txt){
+  // 如果原来有标签，把它放回
+  if(slot.dataset.current){
+    markChipUsed(slot.dataset.current,false);
+  }
+  slot.dataset.current = txt;
+  slot.textContent = txt;
+  slot.classList.add('filled');
+  slot.classList.remove('correct','wrong');
+  markChipUsed(txt,true);
+}
+
+document.getElementById('checkFormat').onclick = ()=>{
+  let right=0, total=LABELS.length;
+  document.querySelectorAll('.slot').forEach(s=>{
+    if(s.dataset.current === s.dataset.answer){
+      s.classList.add('correct'); s.classList.remove('wrong'); right++;
+    }else if(s.dataset.current){
+      s.classList.add('wrong'); s.classList.remove('correct');
+    }
+  });
+  const sc = document.getElementById('formatScore');
+  sc.innerHTML = `得分：${right} / ${total} ${right===total?'<span class="star">⭐⭐⭐ 完全正确！</span>':'再试试看 💪'}`;
+};
+document.getElementById('resetFormat').onclick = ()=>{
+  document.querySelectorAll('.slot').forEach(s=>{
+    s.textContent='?'; s.className='slot'; delete s.dataset.current;
+  });
+  document.getElementById('formatScore').textContent='';
+  renderChips();
+};
+renderChips();
+
+/* -------- Game 2: 课文理解 -------- */
+const QUESTIONS = [
+  {
+    q:'这封信是谁写给谁的？',
+    opts:['眼睛写给小主人','小主人写给爸爸妈妈','老师写给学生','医生写给病人'],
+    a:0,
+    ex:'信末署名是「你的眼睛」，所以是眼睛以拟人的口吻写给小主人的。'
+  },
+  {
+    q:'以前小主人是怎么照顾眼睛的？',
+    opts:['整晚玩电脑','坐在光线充足的地方看书，保持距离，常参加户外活动','常常熬夜看书','从不读书'],
+    a:1,
+    ex:'课文写：在阅读时坐在光线充足的地方、书本保持距离、用电脑每半小时休息、常参加户外活动。'
+  },
+  {
+    q:'「目不转睛」在课文里形容什么？',
+    opts:['专心写作业','一直盯着电脑屏幕','认真听老师讲课','看风景'],
+    a:1,
+    ex:'课文：「你整晚坐在电脑前，目不转睛地盯着屏幕」——形容盯着屏幕不放。'
+  },
+  {
+    q:'小主人为什么成了诊所的"常客"？',
+    opts:['因为爱运动','因为睡眠不足，身体变差，常感冒、头疼、咳嗽','因为帮别人看病','因为诊所很有趣'],
+    a:1,
+    ex:'课文：「因为睡眠不足，你整天无精打采，身体也变差了，经常感冒、头疼、咳嗽。」'
+  },
+  {
+    q:'眼睛出现了哪些变化？',
+    opts:['变亮了','眼圈发黑，视力下降，看东西模糊','完全看不见了','只是有点酸'],
+    a:1,
+    ex:'课文原句：「不但眼圈发黑，而且视力也下降了，看东西越来越模糊。」'
+  },
+  {
+    q:'眼睛最担心的是什么？',
+    opts:['有一天会变瞎','主人不再爱它','被别人嘲笑','没有朋友'],
+    a:0,
+    ex:'课文最后眼睛说：「我真担心有一天会变瞎啊！」'
+  },
+  {
+    q:'眼睛为什么要写这封信？',
+    opts:['只是打招呼','请求小主人改掉坏习惯，不要再伤害它','想去旅行','想换一个主人'],
+    a:1,
+    ex:'信里请求：「不要再伤害我了……为了我们的明天，赶快改掉坏习惯吧！」'
+  },
+  {
+    q:'这封信的语气感觉是：',
+    opts:['生气并要惩罚','诚恳、伤心而又充满期待','开玩笑的','没有感情'],
+    a:1,
+    ex:'眼睛回忆过去的好，诉说现在的痛苦，又请求小主人改变——既伤心又带着期盼。'
+  },
+  {
+    q:'一封完整的书信，一般"不会"出现下面哪一项？',
+    opts:['称呼','祝颂语','署名和日期','电影票价'],
+    a:3,
+    ex:'书信格式：称呼 → 问候语 → 正文 → 祝颂语 → 署名 → 日期。电影票价跟书信格式无关。'
+  },
+  {
+    q:'"祝 你 健康快乐" 在书信格式中属于：',
+    opts:['称呼','问候语','祝颂语','正文'],
+    a:2,
+    ex:'"祝……"一类表达美好祝愿的话叫"祝颂语"，放在正文之后。'
+  }
+];
+
+function renderQuestions(){
+  const wrap = document.getElementById('qlist');
+  wrap.innerHTML='';
+  QUESTIONS.forEach((item,i)=>{
+    const div = document.createElement('div');
+    div.className='q';
+    div.innerHTML = `<div class="stem">${i+1}. ${item.q}</div>
+      <div class="opts">${item.opts.map((o,j)=>`<button class="opt" data-i="${i}" data-j="${j}">${String.fromCharCode(65+j)}. ${o}</button>`).join('')}</div>
+      <div class="explain" id="ex${i}"><b>解析：</b>${item.ex}</div>`;
+    wrap.appendChild(div);
+  });
+  let answered = 0, right = 0;
+  wrap.querySelectorAll('.opt').forEach(btn=>{
+    btn.onclick = ()=>{
+      const i=+btn.dataset.i, j=+btn.dataset.j;
+      const parent = btn.parentElement;
+      if(parent.dataset.done) return;
+      parent.dataset.done = '1';
+      parent.querySelectorAll('.opt').forEach(b=>b.classList.add('disabled'));
+      if(j===QUESTIONS[i].a){ btn.classList.add('correct'); right++; }
+      else{
+        btn.classList.add('wrong');
+        parent.querySelectorAll('.opt')[QUESTIONS[i].a].classList.add('correct');
+      }
+      document.getElementById('ex'+i).classList.add('show');
+      answered++;
+      if(answered===QUESTIONS.length){
+        const pct = Math.round(right/QUESTIONS.length*100);
+        let stars = pct===100?'⭐⭐⭐⭐⭐':pct>=80?'⭐⭐⭐⭐':pct>=60?'⭐⭐⭐':'⭐⭐';
+        document.getElementById('compScore').innerHTML = `得分：${right} / ${QUESTIONS.length}  ${stars}`;
+      }
+    };
+  });
+}
+document.getElementById('resetComp').onclick = ()=>{
+  document.getElementById('compScore').textContent='';
+  renderQuestions();
+};
+renderQuestions();
+</script>
+</body>
+</html>

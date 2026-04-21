@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>五年级第2课 词语学习游戏</title>
+<style>
+  :root{
+    --bg:#eef7ff; --ink:#1f2d3d; --main:#4a90e2; --main-dark:#2e6fbf;
+    --ok:#59c17a; --no:#e05656; --soft:#dceeff; --line:#a8cbef;
+    --warm:#ffb84d;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--ink)}
+  body{min-height:100vh;padding:20px}
+  header{text-align:center;margin-bottom:14px}
+  header h1{margin:0;font-size:24px;color:var(--main-dark)}
+  header p{margin:4px 0;color:#416080}
+
+  .tabs{display:flex;justify-content:center;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+  .tab{padding:10px 18px;border-radius:999px;border:2px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;font-size:16px;font-weight:600}
+  .tab.active{background:var(--main);color:#fff;border-color:var(--main)}
+
+  .panel{max-width:960px;margin:0 auto;background:#fff;border-radius:16px;padding:22px;box-shadow:0 4px 12px rgba(0,0,0,.05);display:none}
+  .panel.active{display:block}
+  h2{color:var(--main-dark);margin:0 0 6px}
+  .hint{color:#416080;margin-bottom:14px;font-size:14px}
+  .btn{padding:10px 18px;border-radius:10px;border:0;background:var(--main);color:#fff;font-weight:700;cursor:pointer;font-size:15px}
+  .btn.ghost{background:#fff;color:var(--main-dark);border:2px solid var(--main)}
+  .btn.warm{background:var(--warm)}
+  .toolbar{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+  .score{text-align:center;font-size:18px;color:var(--main-dark);font-weight:700;margin-top:10px}
+
+  /* 模式一：词义配对 */
+  .match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:600px){.match-grid{grid-template-columns:1fr}}
+  .card{padding:12px 14px;border:2px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;font-size:15px;transition:all .15s}
+  .card.word{background:#fff8e6;font-weight:700;font-size:18px;text-align:center}
+  .card.selected{outline:3px solid var(--warm)}
+  .card.matched{background:#d6f3df;border-color:var(--ok);color:#1b6a37;cursor:default;opacity:.85}
+  .card.flash-wrong{background:#fbd9d9;border-color:var(--no)}
+
+  /* 模式二：看拼音选词 */
+  .pinyin-card{background:var(--soft);border-radius:14px;padding:18px;text-align:center;margin-bottom:14px}
+  .pinyin{font-size:30px;color:var(--main-dark);letter-spacing:3px;font-weight:700;margin-bottom:6px}
+  .meaning{color:#416080;margin-bottom:10px}
+  .choices{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+  @media (max-width:600px){.choices{grid-template-columns:1fr 1fr}}
+  .choice{padding:12px;background:#fff;border:2px solid var(--line);border-radius:10px;font-weight:700;cursor:pointer;font-size:16px}
+  .choice:hover{border-color:var(--main)}
+  .choice.correct{background:#d6f3df;border-color:var(--ok)}
+  .choice.wrong{background:#fbd9d9;border-color:var(--no)}
+  .choice.disabled{cursor:not-allowed;opacity:.75}
+  .progress{text-align:center;color:#416080;margin-bottom:10px;font-size:14px}
+
+  /* 模式三：填空应用 */
+  .cloze{background:var(--soft);border-radius:14px;padding:16px 18px;margin-bottom:12px}
+  .cloze .sent{font-size:17px;line-height:1.9;margin-bottom:8px}
+  .blank{display:inline-block;min-width:80px;padding:2px 10px;background:#fff;border-bottom:3px solid var(--main);border-radius:4px;text-align:center;font-weight:700;color:var(--main-dark)}
+  .blank.correct{background:#d6f3df;border-color:var(--ok);color:#1b6a37}
+  .blank.wrong{background:#fbd9d9;border-color:var(--no)}
+  .word-bank{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .wbtn{padding:8px 14px;background:#fff;border:2px solid var(--line);border-radius:999px;font-weight:700;cursor:pointer}
+  .wbtn:hover{border-color:var(--main)}
+  .wbtn.used{opacity:.35;cursor:not-allowed}
+  .ex-cloze{margin-top:8px;font-size:14px;color:#416080;display:none}
+  .ex-cloze.show{display:block}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🔤 五年级第2课 词语学习游戏</h1>
+  <p>《给小主人的一封信》· 词语的辨认 · 理解 · 应用</p>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="match">① 词义配对 🧩</button>
+  <button class="tab" data-tab="pinyin">② 看拼音选词 🔊</button>
+  <button class="tab" data-tab="cloze">③ 选词填空 ✍️</button>
+</div>
+
+<section class="panel active" id="panel-match">
+  <h2>把词语和它的意思配起来</h2>
+  <p class="hint">先点左边的词语，再点右边对应的意思。一次一对，配对成功会变绿色。</p>
+  <div class="match-grid">
+    <div id="colWords"></div>
+    <div id="colMeanings"></div>
+  </div>
+  <div class="toolbar">
+    <button class="btn warm" id="nextRound">换一批</button>
+  </div>
+  <div class="score" id="matchScore"></div>
+</section>
+
+<section class="panel" id="panel-pinyin">
+  <h2>看拼音和意思，选出正确的词语</h2>
+  <p class="hint">每题四选一。闯关模式：一路答完 21 个词！</p>
+  <div class="progress" id="pinyinProgress"></div>
+  <div class="pinyin-card">
+    <div class="pinyin" id="pinyinText"></div>
+    <div class="meaning" id="meaningText"></div>
+  </div>
+  <div class="choices" id="choicesBox"></div>
+  <div class="toolbar">
+    <button class="btn ghost" id="pinyinReset">重新开始</button>
+  </div>
+  <div class="score" id="pinyinScore"></div>
+</section>
+
+<section class="panel" id="panel-cloze">
+  <h2>把词语放回句子里</h2>
+  <p class="hint">从下面的词语库点一个词，再点句子里的空格填进去。想换答案就再点一次空格。</p>
+  <div id="clozeList"></div>
+  <div class="toolbar">
+    <button class="btn" id="clozeCheck">检查全部</button>
+    <button class="btn ghost" id="clozeReset">重来</button>
+  </div>
+  <div class="score" id="clozeScore"></div>
+</section>
+
+<script>
+/* ===== 数据：21 个词语 ===== */
+const WORDS = [
+  {w:'而且',py:'ér qiě',m:'表示进一步说明或补充'},
+  {w:'隔',py:'gé',m:'中间有间隔或距离'},
+  {w:'惨',py:'cǎn',m:'很严重或很不好'},
+  {w:'盯',py:'dīng',m:'一直看着某个东西'},
+  {w:'头疼',py:'tóu téng',m:'头部疼痛'},
+  {w:'咳嗽',py:'ké sou',m:'喉咙不舒服时发出的声音'},
+  {w:'诊所',py:'zhěn suǒ',m:'看病的地方'},
+  {w:'下降',py:'xià jiàng',m:'变低、变差'},
+  {w:'模糊',py:'mó hu',m:'看不清楚'},
+  {w:'瞎',py:'xiā',m:'看不见'},
+  {w:'抛',py:'pāo',m:'扔出去'},
+  {w:'用心',py:'yòng xīn',m:'认真去做事情'},
+  {w:'光线',py:'guāng xiàn',m:'光的亮度'},
+  {w:'充足',py:'chōng zú',m:'很多，够用'},
+  {w:'放松',py:'fàng sōng',m:'让身体或心情轻松'},
+  {w:'目不转睛',py:'mù bù zhuǎn jīng',m:'一直盯着看'},
+  {w:'无精打采',py:'wú jīng dǎ cǎi',m:'没有精神'},
+  {w:'常客',py:'cháng kè',m:'经常去某个地方的人'},
+  {w:'痛苦',py:'tòng kǔ',m:'身体或心里很难受'},
+  {w:'伤害',py:'shāng hài',m:'对身体或心造成不好的影响'},
+  {w:'睡眠',py:'shuì mián',m:'睡觉的时间和质量'},
+];
+
+function shuffle(a){return a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);}
+
+/* ===== Tabs ===== */
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-'+t.dataset.tab).classList.add('active');
+  };
+});
+
+/* ===== 模式一：词义配对 ===== */
+let matchBatch = [], matchedCount = 0, selectedWord = null;
+const BATCH_SIZE = 6;
+
+function renderMatch(){
+  matchBatch = shuffle(WORDS).slice(0,BATCH_SIZE);
+  matchedCount = 0; selectedWord = null;
+  const colW = document.getElementById('colWords');
+  const colM = document.getElementById('colMeanings');
+  colW.innerHTML=''; colM.innerHTML='';
+  matchBatch.forEach((it,i)=>{
+    const cw = document.createElement('div');
+    cw.className='card word'; cw.textContent=it.w; cw.dataset.i=i;
+    cw.onclick = ()=>{
+      if(cw.classList.contains('matched')) return;
+      document.querySelectorAll('#colWords .card').forEach(x=>x.classList.remove('selected'));
+      cw.classList.add('selected');
+      selectedWord = cw;
+    };
+    colW.appendChild(cw);
+  });
+  shuffle(matchBatch.slice()).forEach(it=>{
+    const cm = document.createElement('div');
+    cm.className='card'; cm.textContent=it.m; cm.dataset.w=it.w;
+    cm.onclick = ()=>{
+      if(cm.classList.contains('matched') || !selectedWord) return;
+      const wi = +selectedWord.dataset.i;
+      if(matchBatch[wi].w === cm.dataset.w){
+        selectedWord.classList.add('matched'); selectedWord.classList.remove('selected');
+        cm.classList.add('matched');
+        matchedCount++;
+        selectedWord = null;
+        if(matchedCount===matchBatch.length){
+          document.getElementById('matchScore').innerHTML = '🎉 全部配对成功！点「换一批」继续挑战。';
+        }
+      }else{
+        cm.classList.add('flash-wrong');
+        setTimeout(()=>cm.classList.remove('flash-wrong'),500);
+      }
+    };
+    colM.appendChild(cm);
+  });
+  document.getElementById('matchScore').textContent='';
+}
+document.getElementById('nextRound').onclick = renderMatch;
+renderMatch();
+
+/* ===== 模式二：看拼音选词 ===== */
+let pinyinOrder = [], pinyinIdx = 0, pinyinRight = 0;
+
+function startPinyin(){
+  pinyinOrder = shuffle(WORDS.slice());
+  pinyinIdx = 0; pinyinRight = 0;
+  document.getElementById('pinyinScore').textContent='';
+  showPinyinQ();
+}
+function showPinyinQ(){
+  if(pinyinIdx>=pinyinOrder.length){
+    document.getElementById('pinyinText').textContent='🎉';
+    document.getElementById('meaningText').textContent='闯关完成！';
+    document.getElementById('choicesBox').innerHTML='';
+    document.getElementById('pinyinProgress').textContent='';
+    const pct = Math.round(pinyinRight/pinyinOrder.length*100);
+    document.getElementById('pinyinScore').innerHTML = `得分：${pinyinRight} / ${pinyinOrder.length} （${pct}%）`;
+    return;
+  }
+  const cur = pinyinOrder[pinyinIdx];
+  document.getElementById('pinyinProgress').textContent = `第 ${pinyinIdx+1} / ${pinyinOrder.length} 题 · 已答对 ${pinyinRight}`;
+  document.getElementById('pinyinText').textContent = cur.py;
+  document.getElementById('meaningText').textContent = '意思：'+cur.m;
+  // 选项：正确 + 3个干扰
+  const distractors = shuffle(WORDS.filter(x=>x.w!==cur.w)).slice(0,3);
+  const opts = shuffle([cur,...distractors]);
+  const box = document.getElementById('choicesBox');
+  box.innerHTML='';
+  opts.forEach(o=>{
+    const b = document.createElement('button');
+    b.className='choice'; b.textContent=o.w;
+    b.onclick = ()=>{
+      box.querySelectorAll('.choice').forEach(x=>{x.classList.add('disabled'); x.onclick=null;});
+      if(o.w===cur.w){ b.classList.add('correct'); pinyinRight++; }
+      else{
+        b.classList.add('wrong');
+        [...box.children].find(c=>c.textContent===cur.w)?.classList.add('correct');
+      }
+      setTimeout(()=>{ pinyinIdx++; showPinyinQ(); }, 800);
+    };
+    box.appendChild(b);
+  });
+}
+document.getElementById('pinyinReset').onclick = startPinyin;
+startPinyin();
+
+/* ===== 模式三：选词填空 ===== */
+const CLOZE = [
+  {s:'在阅读时，我们要坐在__光线__充足的地方。', a:'光线'},
+  {s:'只要__用心__学习，就一定会进步。', a:'用心'},
+  {s:'他__目不转睛__地盯着屏幕，完全没有注意时间。', a:'目不转睛'},
+  {s:'因为睡眠不足，他整天__无精打采__。', a:'无精打采'},
+  {s:'因为经常生病，他成了诊所的__常客__。', a:'常客'},
+  {s:'长时间看屏幕，会对眼睛造成__伤害__。', a:'伤害'},
+  {s:'如果灯光太暗，字就会看得很__模糊__。', a:'模糊'},
+  {s:'他不但完成了作业，__而且__还主动帮助同学。', a:'而且'},
+  {s:'学习之余，我们也要__放松__身心。', a:'放松'},
+  {s:'我们需要__充足__的睡眠，才有精神学习。', a:'充足'},
+];
+
+function renderCloze(){
+  const list = document.getElementById('clozeList');
+  list.innerHTML='';
+  const bankWords = shuffle(CLOZE.map(c=>c.a));
+  CLOZE.forEach((c,i)=>{
+    // 把句子里的 __词__ 替换成空格
+    const html = c.s.replace(/__([^_]+)__/, `<span class="blank" data-i="${i}" data-ans="${c.a}"></span>`);
+    const div = document.createElement('div');
+    div.className='cloze';
+    div.innerHTML = `<div class="sent">${i+1}. ${html}</div>
+      <div class="ex-cloze" id="exc${i}"></div>`;
+    list.appendChild(div);
+  });
+
+  // 词语库（包含答案 + 一些干扰，打乱）
+  const bank = document.createElement('div');
+  bank.className='word-bank'; bank.id='wordBank';
+  const distractors = ['痛苦','下降','头疼','睡眠'];
+  shuffle([...new Set([...bankWords,...distractors])]).forEach(w=>{
+    const b = document.createElement('button');
+    b.className='wbtn'; b.textContent=w; b.dataset.w=w;
+    b.onclick = ()=>{
+      if(b.classList.contains('used')) return;
+      document.querySelectorAll('#wordBank .wbtn').forEach(x=>x.style.outline='');
+      b.style.outline='3px solid var(--warm)';
+      window._clozePick = b;
+    };
+    bank.appendChild(b);
+  });
+  list.parentNode.insertBefore(bank, list.nextSibling);
+
+  document.querySelectorAll('.blank').forEach(bl=>{
+    bl.onclick = ()=>{
+      // 如果空格已填，点击退回词语到词库
+      if(bl.dataset.filled){
+        const w = bl.dataset.filled;
+        document.querySelectorAll('#wordBank .wbtn').forEach(x=>{ if(x.dataset.w===w) x.classList.remove('used'); });
+        bl.textContent=''; delete bl.dataset.filled;
+        bl.classList.remove('correct','wrong');
+        return;
+      }
+      if(!window._clozePick) return;
+      const w = window._clozePick.dataset.w;
+      bl.textContent=w; bl.dataset.filled=w;
+      window._clozePick.classList.add('used');
+      window._clozePick.style.outline='';
+      window._clozePick = null;
+    };
+  });
+  document.getElementById('clozeScore').textContent='';
+}
+document.getElementById('clozeCheck').onclick = ()=>{
+  let right=0, total=CLOZE.length, filled=0;
+  document.querySelectorAll('.blank').forEach(bl=>{
+    const ans = bl.dataset.ans, cur = bl.dataset.filled;
+    if(cur) filled++;
+    if(cur===ans){ bl.classList.add('correct'); bl.classList.remove('wrong'); right++; }
+    else if(cur){ bl.classList.add('wrong'); bl.classList.remove('correct'); }
+  });
+  const sc = document.getElementById('clozeScore');
+  if(filled<total){
+    sc.innerHTML = `还有 ${total-filled} 个空没填哦！当前正确 ${right} 题。`;
+  }else{
+    let stars = right===total?'⭐⭐⭐⭐⭐ 满分！':right>=total*0.8?'⭐⭐⭐⭐':'⭐⭐⭐';
+    sc.innerHTML = `得分：${right} / ${total}  ${stars}`;
+  }
+};
+document.getElementById('clozeReset').onclick = ()=>{
+  document.getElementById('wordBank')?.remove();
+  renderCloze();
+};
+renderCloze();
+</script>
+</body>
+</html>
