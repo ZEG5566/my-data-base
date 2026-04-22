@@ -27,6 +27,7 @@
 - `tools/五年级第2课-阅读理解二游戏/` — 《模糊的世界》7 题（接 Firebase · `reading2_records`）
 - `tools/侦探游戏-模糊的世界/` — 《模糊的世界》侦探情境版（`detective_records`）
 - `tools/五年级第3课-阅读理解游戏/` — 《可贵的沉默》密室逃脱（`reading3_records`）
+- `tools/五年级第3课-教师节阅读游戏/` — 配套短文《教师节的心意》感恩花束挑战 · 7 题 22 分（`reading3b_records`）
 - `tools/_shared/firebase.js` — 共用匿名登录 + Firestore 模块
 
 ## 工作注意事項
