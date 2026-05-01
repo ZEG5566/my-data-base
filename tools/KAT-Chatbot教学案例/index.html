@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>科技的主要应用 — Chatbot 教学设计情境挑战赛</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+class SoundEffects {
+  constructor() { this.ctx = null; }
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+  }
+  playCorrect() {
+    if (!this.ctx) this.init();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+    notes.forEach((freq, i) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      const startTime = this.ctx.currentTime + i * 0.08;
+      gain.gain.setValueAtTime(0, startTime);
+      gain.gain.linearRampToValueAtTime(0.1, startTime + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+      osc.start(startTime);
+      osc.stop(startTime + 0.4);
+    });
+  }
+  playIncorrect() {
+    if (!this.ctx) this.init();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    gain.gain.setValueAtTime(0, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.05);
+    gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3);
+    osc.start(this.ctx.currentTime);
+    osc.stop(this.ctx.currentTime + 0.3);
+  }
+}
+
+const categories = [
+  { id: 'LT',      name: '引导共同学习',    eng: 'Facilitate Learning Together', color: 'bg-green-500',  hover: 'hover:bg-green-600' },
+  { id: 'M_Meta',  name: '发展元认知',       eng: 'Develop Metacognition',        color: 'bg-blue-500',   hover: 'hover:bg-blue-600' },
+  { id: 'D',       name: '进行差异化安排',   eng: 'Provide Differentiation',      color: 'bg-green-700',  hover: 'hover:bg-green-800' },
+  { id: 'M_Motiv', name: '增强学习动力',     eng: 'Increase Motivation',          color: 'bg-blue-800',   hover: 'hover:bg-blue-900' },
+  { id: 'CC',      name: '促进概念转换',     eng: 'Foster Conceptual Change',     color: 'bg-pink-500',   hover: 'hover:bg-pink-600' },
+  { id: 'P',       name: '支持个性化',       eng: 'Enable Personalisation',       color: 'bg-purple-700', hover: 'hover:bg-purple-800' },
+  { id: 'AfL',     name: '支持促进学习的评价', eng: 'Support Assessment for Learning', color: 'bg-red-500', hover: 'hover:bg-red-600' },
+  { id: 'S',       name: '嵌入学习鹰架',     eng: 'Embed Scaffolding',            color: 'bg-indigo-400', hover: 'hover:bg-indigo-500' }
+];
+
+const questionBank = [
+  {
+    scenario: "【模拟录像口试考官】学生观看一段口试视频后，与扮演“考官”的Chatbot进行对话。学生回答后，Chatbot能根据老师预设的关键词（如“浪费食物”、“不应该”），立即判断其回答是否涵盖要点，并给出预设的形成性反馈，如：“你说得对，他们的行为是错误的。你能进一步说明为什么吗？”",
+    correctId: 'AfL',
+    explanation: "利用Chatbot让学生立刻知道自己回答的质量并进行修正，获得比传统练习更即时、更具针对性的反馈，从而调整学习。这体现了“支持促进学习的评价”。"
+  },
+  {
+    scenario: "【礼貌用语纠察员】学生与扮演“长辈”的Chatbot进行“借东西”的对话。如果学生使用了不礼貌的说法（如：“喂，我要借你的笔！”），Chatbot会温和地纠正：“小朋友，直接说‘我要’有点没礼貌哦。你可以试着说‘叔叔，请问您可以借我一支笔吗？’，这样是不是更好听呢？”",
+    correctId: 'CC',
+    explanation: "通过与Chatbot对话，直接帮助学生纠正在口语表达中不恰当或错误的语言使用概念，转变他们在不同社交情境下的语用意识。这体现了“促进概念转换”。"
+  },
+  {
+    scenario: "【智能看图说话引导员】在“看图说话”练习中，如果一个能力较强的学生说出完整句子，Chatbot会追问开放性问题（“你觉得接下来会发生什么？”）。如果一个基础较弱的学生只说出单词（“男孩”、“哭”），Chatbot则会提供句式脚手架，引导他说出完整句子。",
+    correctId: 'D',
+    explanation: "Chatbot能“聪明”地面对不同口语水平的学生，自动提供不同难度的对话支持。这体现了“进行差异化安排”。"
+  },
+  {
+    scenario: "【口语学习日记伙伴】在学生完成一次口语练习（如与“辩论对手”Chatbot对话）后，他可以与这个“日记伙伴”Chatbot进行复盘。Chatbot会问：“这次对话，你觉得最难回应的是哪一点？”或“下次练习，你最想在哪方面进步一点点？”",
+    correctId: 'M_Meta',
+    explanation: "让Chatbot引导学生反思自己的口语学习过程，学会思考、自我监控和规划，从而培养他们的元认知能力。这体现了“发展元认知”。"
+  },
+  {
+    scenario: "【小组辩论协调员】一个小组（2-3人）共同面对一个扮演“对手”的Chatbot。Chatbot提出一个尖锐的论点后，会指示：“请你们小组讨论30秒，然后派一位代表回答我。”",
+    correctId: 'LT',
+    explanation: "这个指令迫使组员之间必须进行有效的口头交流、观点碰撞和协商，从而共同构建回答。Chatbot在此巧妙地起到了组织和推动协作的作用。这体现了“引导共同学习”。"
+  },
+  {
+    scenario: "【兴趣话题点播台】Chatbot开始对话时，首先提供一个菜单：“你好！今天你想聊什么？请选择：A) 我最喜欢的动物 B) 一次难忘的旅行 C) 我未来的梦想”。学生可以根据自己的兴趣选择一个话题，Chatbot随即围绕该话题展开对话。",
+    correctId: 'P',
+    explanation: "让学生可以根据自己的兴趣和节奏，选择与Chatbot的互动内容，使口语练习高度相关且定制化。这体现了“支持个性化”。"
+  },
+  {
+    scenario: "【角色扮演急救箱】学生与扮演“医生”的Chatbot进行对话。当学生不知道如何描述病情时，可以输入或说出关键词“帮助”。Chatbot便会提供一个“急救箱”，里面有可选的句式提示或关键词，帮助学生渡过难关，继续对话。",
+    correctId: 'S',
+    explanation: "在学生进行口语对话可能卡住的地方，Chatbot提供这种“需要时才出现”的即时帮助以降低认知负荷，这体现了典型的“嵌入学习鹰架”。"
+  },
+  {
+    scenario: "【时空侦探冒险记】Chatbot扮演“总部指挥官”，交给学生一个任务：穿越到古代新加坡，采访一位“红头巾”先辈，获取三个生活“线索”。每当学生通过有意义的对话获得一个线索，Chatbot就会给予“侦探积分”和鼓励。",
+    correctId: 'M_Motiv',
+    explanation: "将枯燥的口语问答包装成一个有故事情节、有挑战、有奖励的有趣任务，这种游戏化的叙事方式能极大地激发学生的练习动力。这体现了“增强学习动力”。"
+  }
+];
+
+function App() {
+  const [gameState, setGameState] = useState('start');
+  const [questions, setQuestions] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [isCorrect, setIsCorrect] = useState(null);
+  const [showExplanation, setShowExplanation] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState(null);
+  const [showStars, setShowStars] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+
+  const soundRef = useRef(null);
+  useEffect(() => { soundRef.current = new SoundEffects(); }, []);
+
+  const startGame = () => {
+    const shuffled = [...questionBank].sort(() => 0.5 - Math.random());
+    setQuestions(shuffled);
+    setCurrentIndex(0);
+    setScore(0);
+    setGameState('playing');
+    resetTurn();
+  };
+
+  const resetTurn = () => {
+    setSelectedAnswer(null);
+    setIsCorrect(null);
+    setShowExplanation(false);
+    setFeedbackMessage(null);
+    setShowStars(false);
+    setFailedAttempts(0);
+  };
+
+  const handleAnswer = (categoryId) => {
+    if (showExplanation || feedbackMessage) return;
+    const correct = categoryId === questions[currentIndex].correctId;
+    setSelectedAnswer(categoryId);
+    setIsCorrect(correct);
+
+    if (correct) {
+      if (failedAttempts === 0) setScore(score + 1);
+      setShowExplanation(true);
+      if (soundRef.current) soundRef.current.playCorrect();
+      setFeedbackMessage("恭喜你！答对了！");
+      setShowStars(true);
+    } else {
+      setFailedAttempts(failedAttempts + 1);
+      if (soundRef.current) soundRef.current.playIncorrect();
+      setFeedbackMessage("不对哦，再试一次吧！");
+      setShowStars(false);
+      setTimeout(() => {
+        setFeedbackMessage(null);
+        setSelectedAnswer(null);
+        setIsCorrect(null);
+      }, 1500);
+    }
+  };
+
+  const nextQuestion = () => {
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      resetTurn();
+    } else {
+      setGameState('result');
+    }
+  };
+
+  const renderScreen = () => {
+    if (gameState === 'start') {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="max-w-2xl bg-white rounded-2xl shadow-xl overflow-hidden">
+            <div className="bg-blue-600 p-8 text-center">
+              <h1 className="text-3xl font-bold text-white mb-2">科技的主要应用</h1>
+              <h2 className="text-xl text-blue-100">教学设计情境挑战赛 (Chatbot 篇)</h2>
+            </div>
+            <div className="p-8">
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8">
+                <p className="text-gray-700 font-medium">
+                  💡 核心理念：
+                  <br />
+                  科技的主要应用是说明如何利用科技的能供性促进学习（过程）的教学设计指引。
+                </p>
+              </div>
+              <p className="text-gray-600 mb-8 text-center">
+                本游戏包含 8 个最新的 Chatbot 口语教学情境。请根据情境描述，判断其最符合哪一种"科技的教学应用"。
+              </p>
+              <div className="flex justify-center">
+                <button
+                  onClick={startGame}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:scale-105"
+                >
+                  开始挑战
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (gameState === 'result') {
+      const percentage = Math.round((score / questions.length) * 100);
+      let message = "";
+      if (percentage === 100) message = "太棒了！您是 Chatbot 教学设计大师！🏆";
+      else if (percentage >= 70) message = "做得好！您对教学科技应用有很深的理解。👍";
+      else message = "继续加油！通过实践您会掌握得更好。💪";
+
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">挑战完成！</h2>
+            <div className="text-6xl mb-4">{percentage >= 70 ? '🎉' : '🤔'}</div>
+            <p className="text-2xl font-bold text-blue-600 mb-2">{score} / {questions.length} 分</p>
+            <p className="text-gray-600 mb-8">{message}</p>
+            <button
+              onClick={startGame}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg w-full"
+            >
+              再玩一次
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    const currentQ = questions[currentIndex];
+
+    return (
+      <div className="min-h-screen bg-gray-100 p-4 md:p-8 flex flex-col items-center">
+        <div className="w-full max-w-4xl flex justify-between items-center mb-6">
+          <div className="text-gray-600 font-bold">
+            进度: {currentIndex + 1} / {questions.length}
+          </div>
+          <div className="text-blue-600 font-bold text-xl">
+            得分: {score}
+          </div>
+        </div>
+
+        <div className="w-full max-w-4xl bg-white rounded-2xl shadow-md p-6 md:p-10 mb-8 border-t-4 border-blue-500">
+          <h3 className="text-sm text-blue-500 font-bold uppercase tracking-wider mb-4">Chatbot 教学情境</h3>
+          <p className="text-xl md:text-2xl text-gray-800 leading-relaxed">
+            {currentQ.scenario}
+          </p>
+        </div>
+
+        <div className="w-full max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {categories.map((cat) => {
+            let btnClass = `flex flex-col items-center justify-center p-4 rounded-xl shadow transition duration-200 border-2 cursor-pointer ${cat.color} text-white ${cat.hover}`;
+            if (showExplanation) {
+              btnClass = `flex flex-col items-center justify-center p-4 rounded-xl shadow transition duration-200 border-2 opacity-50 cursor-not-allowed text-white ${cat.color}`;
+              if (cat.id === currentQ.correctId) {
+                btnClass = `flex flex-col items-center justify-center p-4 rounded-xl shadow-lg border-4 border-yellow-400 font-bold transform scale-105 text-white ${cat.color}`;
+              } else if (cat.id === selectedAnswer) {
+                btnClass = `flex flex-col items-center justify-center p-4 rounded-xl shadow border-4 border-red-500 opacity-90 text-white bg-gray-500`;
+              }
+            }
+            return (
+              <button
+                key={cat.id}
+                disabled={showExplanation || feedbackMessage !== null}
+                onClick={() => handleAnswer(cat.id)}
+                className={btnClass}
+              >
+                <span className="font-bold text-lg mb-1">{cat.name}</span>
+                <span className="text-xs opacity-80">{cat.id}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {showExplanation && (
+          <div className={`w-full max-w-4xl rounded-xl p-6 shadow-md animate-fade-in-up ${isCorrect ? 'bg-green-100 border-l-4 border-green-500' : 'bg-red-100 border-l-4 border-red-500'}`}>
+            <div className="flex items-start">
+              <div className="text-2xl mr-4">{isCorrect ? '✅' : '❌'}</div>
+              <div className="flex-1">
+                <h4 className={`text-lg font-bold mb-2 ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>
+                  {isCorrect ? '回答正确！' : '回答错误'}
+                </h4>
+                <p className="text-gray-800 mb-4">
+                  <span className="font-bold">正确答案是：</span>
+                  {categories.find(c => c.id === currentQ.correctId)?.name}
+                </p>
+                <p className="text-gray-700 bg-white p-4 rounded shadow-sm border border-gray-200">
+                  <span className="font-bold text-blue-600">解析：</span>{currentQ.explanation}
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={nextQuestion}
+                className="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-6 rounded-lg shadow transition"
+              >
+                {currentIndex < questions.length - 1 ? '下一题 ➡️' : '查看结果 🏁'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {feedbackMessage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <div className={`px-8 py-6 rounded-2xl shadow-2xl text-4xl font-bold animate-bounce tracking-wide ${isCorrect ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+              {feedbackMessage}
+            </div>
+          </div>
+        )}
+
+        {showStars && (
+          <div className="fixed inset-0 pointer-events-none z-40 overflow-hidden">
+            {[...Array(30)].map((_, i) => (
+              <div key={i} className="absolute text-yellow-400 text-5xl animate-fall"
+                   style={{
+                     left: `${Math.random() * 100}%`,
+                     animationDuration: `${Math.random() * 1.5 + 1.5}s`,
+                     animationDelay: `${Math.random() * 0.5}s`
+                   }}>⭐</div>
+            ))}
+          </div>
+        )}
+
+        <style dangerouslySetInnerHTML={{__html: `
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          .animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+          @keyframes fall {
+            0% { transform: translateY(-10vh) rotate(0deg) scale(0.5); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(360deg) scale(1.5); opacity: 0; }
+          }
+          .animate-fall { animation: fall linear forwards; }
+        `}} />
+      </div>
+    );
+  };
+
+  return (
+    <div className="relative font-sans text-gray-900">
+      {renderScreen()}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
