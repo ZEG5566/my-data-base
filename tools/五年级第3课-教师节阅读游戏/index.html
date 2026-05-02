@@ -273,6 +273,7 @@ function col(name){ return collection(_db, name); }
 const COLLECTION = 'reading3b_records';
 let docRef = null;
 let cloudOk = false;
+let authUid = null;
 
 /* ============ 拼音字典 ============ */
 const DICT = {
@@ -890,7 +891,7 @@ function start(name){
   renderAll();
   if(cloudOk){
     addDoc(col(COLLECTION), {
-      name, startedAt: serverTimestamp(), updatedAt: serverTimestamp(),
+      authUid, name, startedAt: serverTimestamp(), updatedAt: serverTimestamp(),
       stars:0, coin:0, life:100, readDepth:0, completed:false, answers:{}
     }).then(ref => {
       docRef = doc(col(COLLECTION), ref.id);
@@ -904,7 +905,8 @@ function start(name){
 (async ()=>{
   const s = document.getElementById('cloudStatus');
   try{
-    await ensureAuth();
+    const u = await ensureAuth();
+    authUid = u.uid;
     cloudOk = true;
     s.textContent = '☁️ 云端已连接 · 提交会自动同步给老师';
     s.className = 'cloud live';
