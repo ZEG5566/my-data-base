@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>👩‍🏫 老师后台 · 感恩花束·教师节心意挑战</title>
+<style>
+:root{--main:#d9477a;--main-dark:#a6305a;--ok:#3dd28a;--no:#ef5b5b;--soft:#fff0f3;--line:#f5c6d6;--ink:#3a2a3e}
+*{box-sizing:border-box}
+html,body{margin:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:linear-gradient(180deg,#fff5f9,#fff0d6);color:var(--ink);min-height:100vh}
+body{padding:20px 16px 60px}
+.wrap{max-width:1100px;margin:0 auto}
+header{background:#fff;border-radius:14px;padding:18px 22px;box-shadow:0 6px 20px rgba(166,48,90,.15);margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-top:4px solid var(--main)}
+header h1{margin:0;color:var(--main-dark);font-size:22px}
+header .sub{color:#8a556b;font-size:13.5px;margin-top:4px}
+header .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.btn{padding:9px 16px;border:0;border-radius:9px;font-weight:700;cursor:pointer;font-size:14px}
+.btn.primary{background:var(--main);color:#fff}
+.btn.primary:hover{background:var(--main-dark)}
+.notice{background:var(--soft);border-left:4px solid var(--main);padding:10px 14px;border-radius:8px;font-size:13.5px;color:#7a2a4a;margin-bottom:14px;line-height:1.6}
+.status{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700;margin-left:8px}
+.status.live{background:#d9f5e6;color:#0e6b3d}
+.status.off{background:#fde0e0;color:#8a2020}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+@media (max-width:720px){.summary{grid-template-columns:repeat(2,1fr)}}
+.stat{background:#fff;border-radius:12px;padding:14px;text-align:center;box-shadow:0 4px 12px rgba(166,48,90,.08)}
+.stat .n{font-size:26px;font-weight:800;color:var(--main-dark)}
+.stat .l{font-size:12.5px;color:#8a556b;margin-top:4px}
+table{width:100%;background:#fff;border-radius:12px;overflow:hidden;border-collapse:collapse;box-shadow:0 4px 12px rgba(166,48,90,.08)}
+th,td{padding:10px 12px;text-align:left;font-size:14px;border-bottom:1px solid #f1d6e0}
+th{background:var(--soft);color:var(--main-dark);font-weight:700;font-size:13px}
+tr:last-child td{border-bottom:0}
+tr.row{cursor:pointer}
+tr.row:hover{background:#fff5f8}
+.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.tag.ok{background:#d9f5e6;color:#0e6b3d}
+.tag.no{background:#fde0e0;color:#8a2020}
+.tag.mid{background:#fff5d9;color:#a37200}
+.detail{background:#fff5f8;padding:14px 18px;font-size:13.5px;line-height:1.7}
+.detail h3{margin:10px 0 6px;color:var(--main-dark);font-size:14.5px}
+.detail .qbox{background:#fff;border-radius:10px;padding:10px 14px;margin-bottom:8px;border-left:4px solid var(--main)}
+.detail .qbox.pass{border-left-color:var(--ok)}
+.detail .qbox.fail{border-left-color:var(--no)}
+.detail .qtxt{color:#444;font-weight:700;margin-bottom:4px}
+.detail .ans{background:var(--soft);border-radius:6px;padding:6px 10px;margin:4px 0;white-space:pre-wrap;font-size:13.5px;color:#333}
+.detail .hit{color:#0e6b3d;margin:2px 0}
+.detail .miss{color:#8a2020;margin:2px 0}
+.detail .avoid{color:#c25a1a;margin:2px 0}
+.empty{background:#fff;border-radius:12px;padding:36px;text-align:center;color:#8a556b;font-size:15px;box-shadow:0 4px 12px rgba(166,48,90,.08)}
+.empty .big{font-size:40px;margin-bottom:10px}
+.pill{padding:2px 8px;border-radius:6px;background:#ffe8f0;font-size:12px;font-weight:700;color:#7a2a4a}
+.loading{text-align:center;padding:40px;color:#8a556b}
+.spinner{display:inline-block;width:20px;height:20px;border:3px solid #f1d6e0;border-top-color:var(--main);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>👩‍🏫 老师后台 · 感恩花束挑战 <span class="status" id="connStatus">连接中…</span></h1>
+      <div class="sub">《可贵的沉默》配套短文「教师节的心意」 · Firebase (my-teaching-tools)</div>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="exportCsv">📥 导出 CSV</button>
+    </div>
+  </header>
+
+  <div class="notice">
+    ☁️ <b>云端实时同步：</b>学生一提交答案，这里自动刷新，不用手动按 🔄。跨设备也能看到（学生在平板上做，老师在电脑上看）。
+  </div>
+
+  <div class="summary" id="summary"></div>
+  <div id="content"><div class="loading"><div class="spinner"></div>正在读取云端数据……</div></div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyDTJvkp3hCFToJ5Pzz1E7p9jS5QH4RQCHo',
+  authDomain: 'my-teaching-tools-ab8b0.firebaseapp.com',
+  projectId: 'my-teaching-tools-ab8b0',
+  storageBucket: 'my-teaching-tools-ab8b0.firebasestorage.app',
+  messagingSenderId: '1004771212155',
+  appId: '1:1004771212155:web:df71fa935029136dbc1bde'
+};
+const _app = initializeApp(firebaseConfig);
+const _db = getFirestore(_app);
+const _auth = getAuth(_app);
+function ensureAuth(){
+  return new Promise((resolve, reject)=>{
+    const unsub = onAuthStateChanged(_auth, u=>{ if(u){ unsub(); resolve(u); } });
+    signInAnonymously(_auth).catch(reject);
+  });
+}
+function col(name){ return collection(_db, name); }
+
+const COLLECTION = 'reading3b_records';
+let records = [];
+
+const QTITLES = {
+  '🌸①':'Q1 · 找词语（鸦雀无声）',
+  '🌸②':'Q2 · 找词语（语重心长）',
+  '🌸③':'Q3 · 同学们兴奋的情景',
+  '🌸④':'Q4 · 小文烦恼的原因',
+  '🌸⑤':'Q5 · 林老师的做法',
+  '🌸⑥':'Q6 · 感受 + 明白的道理',
+  '🌸⑦':'Q7 · 林老师是个怎样的人 + 证据',
+};
+const QIDS = ['🌸①','🌸②','🌸③','🌸④','🌸⑤','🌸⑥','🌸⑦'];
+
+function fmt(ts){
+  if(!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : (ts instanceof Date ? ts : new Date(ts));
+  const pad = n=>String(n).padStart(2,'0');
+  return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]); }
+
+function renderSummary(){
+  const total = records.length;
+  const done = records.filter(r=>r.completed).length;
+  const avgFlower = total? (records.reduce((s,r)=>s+(r.stars||0),0)/total).toFixed(1):'0';
+  const avgScore = total? (records.reduce((s,r)=>s+(r.coin||0),0)/total).toFixed(1):'0';
+  document.getElementById('summary').innerHTML = `
+    <div class="stat"><div class="n">${total}</div><div class="l">👥 学生人数</div></div>
+    <div class="stat"><div class="n">${done}</div><div class="l">💐 完成花束</div></div>
+    <div class="stat"><div class="n">${avgFlower}</div><div class="l">🌸 平均花朵 / 7</div></div>
+    <div class="stat"><div class="n">${avgScore}</div><div class="l">⭐ 平均得分 / 22</div></div>
+  `;
+}
+
+function answerDetail(qid, a){
+  if(!a) return '';
+  const latest = a.latest || a;
+  const pass = latest.passed;
+  const cls = pass===true?'pass':(pass===false?'fail':'');
+  const tag = pass===true?'<span class="tag ok">✓ 通过</span>':pass===false?'<span class="tag no">✗ 未通过</span>':'';
+  let body='';
+  if(latest.type==='exact'){
+    body = `<div class="ans">${esc(latest.answer)}</div><div style="color:#666;font-size:12.5px">正确答案：${esc(latest.expected)}</div>`;
+  } else if(latest.type==='input'){
+    body = `<div class="ans">${esc(latest.answer)}</div>`;
+    if(latest.hit) body += latest.hit.map(h=>`<div class="hit">✓ ${esc(h)}</div>`).join('');
+    if(latest.miss) body += latest.miss.map(h=>`<div class="miss">✗ ${esc(h)}</div>`).join('');
+    if(latest.avoid&&latest.avoid.length) body += `<div class="avoid">⚠️ 无关信息：${latest.avoid.map(esc).join('、')}</div>`;
+  } else if(latest.type==='twoInput'){
+    ['part1','part2'].forEach((p,i)=>{
+      const x = latest[p]; if(!x) return;
+      body += `<div style="margin-top:6px"><b>${i===0?'① ':'② '}</b><div class="ans">${esc(x.answer)}</div>`;
+      if(x.hit) body += x.hit.map(h=>`<div class="hit">✓ ${esc(h)}</div>`).join('');
+      if(x.miss) body += x.miss.map(h=>`<div class="miss">✗ ${esc(h)}</div>`).join('');
+      if(x.avoid&&x.avoid.length) body += `<div class="avoid">⚠️ 无关信息：${x.avoid.map(esc).join('、')}</div>`;
+      body += `</div>`;
+    });
+  }
+  return `<div class="qbox ${cls}">
+    <div class="qtxt">${esc(qid)} ${tag} <span class="pill">尝试 ${a.attempts||1} 次</span></div>
+    ${body}
+  </div>`;
+}
+
+const expanded = new Set();
+
+function render(){
+  renderSummary();
+  const box = document.getElementById('content');
+  if(!records.length){
+    box.innerHTML = `<div class="empty"><div class="big">📭</div>还没有学生作答记录。<br>让学生打开 <code>index.html</code> 输入姓名并挑战。</div>`;
+    return;
+  }
+  let rows = `<table><thead><tr>
+    <th>姓名</th><th>🌸花/7</th><th>⭐分/22</th><th>📖精读</th><th>💗心意</th><th>状态</th><th>开始</th><th>最后更新</th><th></th>
+  </tr></thead><tbody>`;
+  records.forEach((r)=>{
+    const status = r.completed?`<span class="tag ok">💐 已完成</span>`:`<span class="tag mid">进行中</span>`;
+    const rank = r.completed&&r.rank?`<div style="color:#8b5a00;font-size:12px;margin-top:2px">${esc(r.medal||'')} ${esc(r.rank)}</div>`:'';
+    const open = expanded.has(r.id);
+    rows += `<tr class="row" data-id="${r.id}">
+      <td><b>${esc(r.name)}</b>${rank}</td>
+      <td>${r.stars||0}</td>
+      <td>${r.coin||0}</td>
+      <td><b style="color:#1e6b3d">${r.readDepth||0}</b></td>
+      <td>${r.life||0}</td>
+      <td>${status}</td>
+      <td>${fmt(r.startedAt)}</td>
+      <td>${fmt(r.updatedAt)}</td>
+      <td style="color:var(--main);font-weight:700">${open?'▴ 收起':'▾ 详情'}</td>
+    </tr>
+    <tr id="d-${r.id}" style="display:${open?'':'none'}"><td colspan="9" style="padding:0"><div class="detail" id="dc-${r.id}"></div></td></tr>`;
+  });
+  rows += '</tbody></table>';
+  box.innerHTML = rows;
+
+  expanded.forEach(id=>{ const r = records.find(x=>x.id===id); if(r) fillDetail(r); });
+
+  box.querySelectorAll('tr.row').forEach(tr=>{
+    tr.onclick = ()=>{
+      const id = tr.dataset.id;
+      const d = document.getElementById('d-'+id);
+      if(expanded.has(id)){
+        expanded.delete(id);
+        d.style.display='none';
+        tr.cells[tr.cells.length-1].textContent='▾ 详情';
+      } else {
+        expanded.add(id);
+        const r = records.find(x=>x.id===id);
+        if(r) fillDetail(r);
+        d.style.display='';
+        tr.cells[tr.cells.length-1].textContent='▴ 收起';
+      }
+    };
+  });
+}
+
+function fillDetail(r){
+  let html = `<h3>📝 作答详情</h3>`;
+  QIDS.forEach(qid=>{
+    if(r.answers && r.answers[qid]){
+      html += answerDetail(QTITLES[qid]||qid, r.answers[qid]);
+    } else {
+      html += `<div class="qbox" style="border-left-color:#ccc;color:#999">${QTITLES[qid]||qid} — 还没作答</div>`;
+    }
+  });
+  const el = document.getElementById('dc-'+r.id);
+  if(el) el.innerHTML = html;
+}
+
+document.getElementById('exportCsv').onclick = ()=>{
+  if(!records.length){ alert('没有记录可导出'); return; }
+  const head = ['姓名','花朵/7','得分/22','精读度','心意值','完成','等级','开始时间','最后更新'];
+  QIDS.forEach(qid=>{ head.push(`${qid}答案`); head.push(`${qid}通过`); });
+  const rows = [head];
+  records.forEach(r=>{
+    const a = r.answers||{};
+    const row = [ r.name, r.stars||0, r.coin||0, r.readDepth||0, r.life||0,
+      r.completed?'是':'否', r.rank||'', fmt(r.startedAt), fmt(r.updatedAt) ];
+    QIDS.forEach(qid=>{
+      const x = (a[qid] && a[qid].latest) || {};
+      let ans = '';
+      if(x.type==='twoInput'){
+        const p1 = x.part1 ? x.part1.answer : '';
+        const p2 = x.part2 ? x.part2.answer : '';
+        ans = `①${p1}\n②${p2}`;
+      } else {
+        ans = x.answer || '';
+      }
+      row.push(ans);
+      row.push(x.passed?'✓':(x.passed===false?'✗':''));
+    });
+    rows.push(row);
+  });
+  const csv = '\uFEFF'+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `教师节心意_学生作答_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+};
+
+(async ()=>{
+  try{
+    await ensureAuth();
+    const q = query(col(COLLECTION), orderBy('updatedAt','desc'));
+    onSnapshot(q, (snap)=>{
+      records = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      document.getElementById('connStatus').textContent='🟢 实时同步中';
+      document.getElementById('connStatus').className='status live';
+      render();
+    }, (err)=>{
+      document.getElementById('connStatus').textContent='🔴 连接失败';
+      document.getElementById('connStatus').className='status off';
+      document.getElementById('content').innerHTML = `<div class="empty"><div class="big">⚠️</div>读取失败：${esc(err.message)}</div>`;
+    });
+  }catch(e){
+    document.getElementById('connStatus').textContent='🔴 认证失败';
+    document.getElementById('connStatus').className='status off';
+    document.getElementById('content').innerHTML = `<div class="empty"><div class="big">⚠️</div>匿名登录失败：${esc(e.message)}</div>`;
+  }
+})();
+</script>
+</body>
+</html>
