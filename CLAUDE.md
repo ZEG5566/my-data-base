@@ -1,27 +1,32 @@
 # my-tracked-games — 帶學情追蹤的班級工具總專案
 
 ## 對話開始時請先讀
-進度與最近更動都在 Obsidian：`secondbrain/工程专案/my-tracked-games.md`
+- 項目當前狀態：`secondbrain/创作库/项目/my-tracked-games.md`
+- 跨項目踩坑教訓（必看）：
+  - `secondbrain/备忘录/firestore-踩坑.md`
+  - `secondbrain/备忘录/firebase-key-决策.md`
+  - `secondbrain/备忘录/supabase-清理.md`
 
 ## 工作模式
 - **加新工具**：對 Claude 說「我想做一個 XXX 工具」→ Claude 會建 `tools/<工具名>/` 子資料夾、引導我跟著 EP10 影片做
 - **結束工作**：對 Claude 說「**收工**」→ Claude 自動完成下列全部：
   1. `git add` + `commit` + `push` 到 GitHub
-  2. 更新 Obsidian `工作笔记.md` + CLAUDE.md 工具清单
-  3. **确认 GitHub Pages 已启用**（没启用就 `gh api -X POST repos/ZEG5566/my-tracked-games/pages` 开启）
-  4. **若本轮新增了 Firestore 集合** → 提醒我在 Firebase 后台部署规则
-  5. **若本轮新增了第一次上线的新域名** → 提醒我把域名加进 Firebase Authorized domains
-  6. 最后列出所有可用链接 + 一句验证步骤（学生端填名字 → 老师端看有无记录）
+  2. 更新 Obsidian 項目記錄 `secondbrain/创作库/项目/my-tracked-games.md`（進度、工具清單、改動表）
+  3. **若有新踩坑/通用教訓** → 寫到 `secondbrain/备忘录/<主題>.md`，並在項目記錄底部用 `[[]]` 雙鏈回指
+  4. **确认 GitHub Pages 已启用**（没启用就 `gh api -X POST repos/ZEG5566/my-tracked-games/pages` 开启）
+  5. **若本轮新增了 Firestore 集合** → 提醒我在 Firebase 后台部署规则（详 `备忘录/firestore-踩坑.md`）
+  6. **若本轮新增了第一次上线的新域名** → 提醒我把域名加进 Firebase Authorized domains
+  7. 最后列出所有可用链接 + 一句验证步骤（学生端填名字 → 老师端看有无记录）
 - **接續工作**：對 Claude 說「讀工作筆記、告訴我上次做到哪」
 
 ## 三個家
 - 💻 本地工作副本：`~/Projects/my-tracked-games/`（代碼的家，跨設備靠 git 同步）
 - 🐙 GitHub repo：`ZEG5566/my-tracked-games`（公開，網頁的家）
-- 📘 Obsidian 駕駛艙：`secondbrain/工程专案/my-tracked-games.md`（想法的家）
+- 📘 Obsidian 駕駛艙：`secondbrain/创作库/项目/my-tracked-games.md`（項目狀態）+ `secondbrain/备忘录/`（踩坑教訓）
 - 🔥 Firebase 專案：`my-teaching-tools`（資料的家）
 
 ## 設計原則
-新做遊戲前先讀：`secondbrain/素材库/网页游戏设计/游戏化学习网页设计checklist.md`（跨項目共享方法論）
+新做遊戲前先讀：`secondbrain/技能库/网页游戏设计/游戏化学习网页设计checklist.md`（跨項目共享方法論）
 
 ## 工具清單
 （之後加新工具時會自動更新）
