@@ -21,7 +21,7 @@
 - 🔥 Firebase 專案：`my-teaching-tools`（資料的家）
 
 ## 設計原則
-新做遊戲前先讀：`secondbrain/教学素材/网页游戏设计/游戏化学习网页设计checklist.md`（跨項目共享方法論）
+新做遊戲前先讀：`secondbrain/素材库/网页游戏设计/游戏化学习网页设计checklist.md`（跨項目共享方法論）
 
 ## 工具清單
 （之後加新工具時會自動更新）
